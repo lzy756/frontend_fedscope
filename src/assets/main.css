@@ -1,0 +1,44 @@
+@import './base.css';
+
+#app {
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+/* 移除会影响布局的网格样式 */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* 添加一些必要的全局样式修复 */
+* {
+  box-sizing: border-box;
+}
+
+.ant-layout {
+  background: transparent;
+}
+
+/* 确保内容区域不会溢出 */
+.ant-layout-content {
+  overflow-x: auto;
+}
