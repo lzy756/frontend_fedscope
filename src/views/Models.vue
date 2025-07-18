@@ -209,7 +209,7 @@
 
     <!-- 模型详情模态框 -->
     <a-modal
-      v-model:visible="detailModalVisible"
+      v-model:open="detailModalVisible"
       :title="`模型详情 - ${selectedModel.name}`"
       width="1000px"
       :footer="null"
@@ -428,7 +428,7 @@
 
     <!-- 模型对比模态框 -->
     <a-modal
-      v-model:visible="compareModalVisible"
+      v-model:open="compareModalVisible"
       title="模型对比"
       width="1200px"
       :footer="null"
@@ -494,7 +494,7 @@
 
     <!-- 上传模型模态框 -->
     <a-modal
-      v-model:visible="uploadModalVisible"
+      v-model:open="uploadModalVisible"
       title="上传模型"
       width="600px"
       @ok="handleUploadOk"

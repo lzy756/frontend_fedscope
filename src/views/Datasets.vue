@@ -209,7 +209,7 @@
 
     <!-- 上传数据集模态框 -->
     <a-modal
-      v-model:visible="uploadModalVisible"
+      v-model:open="uploadModalVisible"
       title="上传数据集"
       width="600px"
       @ok="handleUploadOk"
@@ -264,7 +264,7 @@
 
     <!-- 数据预览模态框 -->
     <a-modal
-      v-model:visible="previewModalVisible"
+      v-model:open="previewModalVisible"
       :title="`数据预览 - ${previewData.name}`"
       width="900px"
       :footer="null"
@@ -340,7 +340,7 @@
 
     <!-- 数据分析模态框 -->
     <a-modal
-      v-model:visible="analysisModalVisible"
+      v-model:open="analysisModalVisible"
       :title="`数据分析 - ${analysisData.name}`"
       width="1000px"
       :footer="null"

@@ -226,7 +226,7 @@
 
     <!-- 参与方详情模态框 -->
     <a-modal
-      v-model:visible="detailModalVisible"
+      v-model:open="detailModalVisible"
       :title="`参与方详情 - ${selectedParticipant.name}`"
       width="800px"
       :footer="null"
@@ -349,7 +349,7 @@
 
     <!-- 参与方配置模态框 -->
     <a-modal
-      v-model:visible="configModalVisible"
+      v-model:open="configModalVisible"
       :title="`配置参与方 - ${configParticipant.name}`"
       width="600px"
       @ok="handleConfigOk"
@@ -417,7 +417,7 @@
 
     <!-- 添加参与方模态框 -->
     <a-modal
-      v-model:visible="addModalVisible"
+      v-model:open="addModalVisible"
       title="添加参与方"
       width="600px"
       @ok="handleAddOk"
@@ -467,7 +467,7 @@
 
     <!-- 连接状态模态框 -->
     <a-modal
-      v-model:visible="connectionModalVisible"
+      v-model:open="connectionModalVisible"
       title="连接状态监控"
       width="900px"
       :footer="null"
