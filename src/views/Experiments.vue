@@ -107,10 +107,11 @@
             allow-clear
             @change="handleFilterChange"
           >
-            <a-select-option value="fedavg">FedAvg</a-select-option>
-            <a-select-option value="fedprox">FedProx</a-select-option>
-            <a-select-option value="fedopt">FedOpt</a-select-option>
-            <a-select-option value="scaffold">SCAFFOLD</a-select-option>
+            <a-select-option value="Cluster-FedSAK">Cluster-FedSAK</a-select-option>
+            <a-select-option value="FedAvg">FedAvg</a-select-option>
+            <a-select-option value="FedProx">FedProx</a-select-option>
+            <a-select-option value="FedOpt">FedOpt</a-select-option>
+            <a-select-option value="SCAFFOLD">SCAFFOLD</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="搜索">
@@ -126,7 +127,12 @@
           </a-input>
         </a-form-item>
         <a-form-item>
-          <a-button @click="resetFilters">重置</a-button>
+          <a-button @click="resetFilters">
+            <template #icon>
+              <ClearOutlined />
+            </template>
+            重置
+          </a-button>
         </a-form-item>
       </a-form>
     </a-card>
@@ -173,6 +179,9 @@
                 size="small"
                 @click="showDetail(record)"
               >
+                <template #icon>
+                  <EyeOutlined />
+                </template>
                 详情
               </a-button>
               <a-button
@@ -182,6 +191,9 @@
                 danger
                 @click="stopExperiment(record)"
               >
+                <template #icon>
+                  <StopOutlined />
+                </template>
                 停止
               </a-button>
               <a-button
@@ -190,6 +202,9 @@
                 size="small"
                 @click="startExperiment(record)"
               >
+                <template #icon>
+                  <PlayCircleOutlined />
+                </template>
                 启动
               </a-button>
               <a-popconfirm
@@ -201,6 +216,9 @@
                   size="small"
                   danger
                 >
+                  <template #icon>
+                    <DeleteOutlined />
+                  </template>
                   删除
                 </a-button>
               </a-popconfirm>
@@ -233,10 +251,21 @@
           <a-col :span="12">
             <a-form-item label="算法类型" name="algorithm">
               <a-select v-model:value="createForm.algorithm" placeholder="选择算法">
-                <a-select-option value="fedavg">FedAvg</a-select-option>
-                <a-select-option value="fedprox">FedProx</a-select-option>
-                <a-select-option value="fedopt">FedOpt</a-select-option>
-                <a-select-option value="scaffold">SCAFFOLD</a-select-option>
+                <a-select-option value="Cluster-FedSAK">
+                  <ClusterOutlined /> Cluster-FedSAK
+                </a-select-option>
+                <a-select-option value="FedAvg">
+                  <NodeIndexOutlined /> FedAvg
+                </a-select-option>
+                <a-select-option value="FedProx">
+                  <NodeIndexOutlined /> FedProx
+                </a-select-option>
+                <a-select-option value="FedOpt">
+                  <NodeIndexOutlined /> FedOpt
+                </a-select-option>
+                <a-select-option value="SCAFFOLD">
+                  <NodeIndexOutlined /> SCAFFOLD
+                </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
@@ -286,10 +315,18 @@
 
         <a-form-item label="数据集" name="dataset">
           <a-select v-model:value="createForm.dataset" placeholder="选择数据集">
-            <a-select-option value="cifar10">CIFAR-10</a-select-option>
-            <a-select-option value="mnist">MNIST</a-select-option>
-            <a-select-option value="femnist">FEMNIST</a-select-option>
-            <a-select-option value="shakespeare">Shakespeare</a-select-option>
+            <a-select-option value="cifar10">
+              <DatabaseOutlined /> CIFAR-10
+            </a-select-option>
+            <a-select-option value="mnist">
+              <DatabaseOutlined /> MNIST
+            </a-select-option>
+            <a-select-option value="femnist">
+              <DatabaseOutlined /> FEMNIST
+            </a-select-option>
+            <a-select-option value="shakespeare">
+              <DatabaseOutlined /> Shakespeare
+            </a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
@@ -299,53 +336,82 @@
     <a-modal
       v-model:open="detailModalVisible"
       title="实验详情"
-      width="1000px"
+      width="1400px"
       :footer="null"
+      :style="{ top: '20px' }"
+      wrap-class-name="experiment-detail-modal"
     >
       <div v-if="selectedExperiment">
-        <a-descriptions :column="2" bordered>
-          <a-descriptions-item label="实验名称">
-            {{ selectedExperiment.name }}
-          </a-descriptions-item>
-          <a-descriptions-item label="实验状态">
-            <a-tag :color="getStatusColor(selectedExperiment.status)">
-              {{ getStatusText(selectedExperiment.status) }}
-            </a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item label="算法类型">
-            {{ selectedExperiment.algorithm }}
-          </a-descriptions-item>
-          <a-descriptions-item label="创建时间">
-            {{ selectedExperiment.createTime }}
-          </a-descriptions-item>
-          <a-descriptions-item label="训练进度">
-            <a-progress :percent="selectedExperiment.progress" />
-          </a-descriptions-item>
-          <a-descriptions-item label="参与方数量">
-            {{ selectedExperiment.participants }}
-          </a-descriptions-item>
-          <a-descriptions-item label="数据集">
-            {{ selectedExperiment.dataset }}
-          </a-descriptions-item>
-          <a-descriptions-item label="学习率">
-            {{ selectedExperiment.learningRate }}
-          </a-descriptions-item>
-          <a-descriptions-item label="实验描述" :span="2">
-            {{ selectedExperiment.description }}
-          </a-descriptions-item>
-        </a-descriptions>
+        <a-tabs v-model:activeKey="detailActiveTab" type="card">
+          <!-- Overview 标签页 -->
+          <a-tab-pane key="overview" tab="概览">
+            <a-descriptions :column="2" bordered>
+              <a-descriptions-item label="实验名称">
+                {{ selectedExperiment.name }}
+              </a-descriptions-item>
+              <a-descriptions-item label="实验状态">
+                <a-tag :color="getStatusColor(selectedExperiment.status)">
+                  {{ getStatusText(selectedExperiment.status) }}
+                </a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="算法类型">
+                {{ selectedExperiment.algorithm }}
+              </a-descriptions-item>
+              <a-descriptions-item label="创建时间">
+                {{ selectedExperiment.createTime }}
+              </a-descriptions-item>
+              <a-descriptions-item label="训练进度">
+                <a-progress :percent="selectedExperiment.progress" />
+              </a-descriptions-item>
+              <a-descriptions-item label="参与方数量">
+                {{ selectedExperiment.participants }}
+              </a-descriptions-item>
+              <a-descriptions-item label="数据集">
+                {{ selectedExperiment.dataset }}
+              </a-descriptions-item>
+              <a-descriptions-item label="学习率">
+                {{ selectedExperiment.learningRate }}
+              </a-descriptions-item>
+              <a-descriptions-item label="实验描述" :span="2">
+                {{ selectedExperiment.description }}
+              </a-descriptions-item>
+            </a-descriptions>
+          </a-tab-pane>
 
-        <a-divider>训练日志</a-divider>
-        <a-timeline>
-          <a-timeline-item
-            v-for="log in selectedExperiment.logs"
-            :key="log.id"
-            :color="log.type === 'error' ? 'red' : log.type === 'warning' ? 'orange' : 'blue'"
-          >
-            <p><strong>{{ log.time }}</strong></p>
-            <p>{{ log.message }}</p>
-          </a-timeline-item>
-        </a-timeline>
+          <!-- Metrics 标签页 -->
+          <a-tab-pane key="metrics" tab="指标">
+            <div class="metrics-placeholder">
+              <a-empty description="基础指标图表将在此显示" />
+            </div>
+          </a-tab-pane>
+
+          <!-- Cluster-FedSAK 标签页 -->
+          <a-tab-pane key="cluster-fedsak" tab="分簇-FedSAK">
+            <div class="cluster-fedsak-container">
+              <ClusterFedSAKView 
+                :experiment-id="selectedExperiment.id"
+                @back="detailModalVisible = false"
+                @experiment-update="handleExperimentUpdate"
+              />
+            </div>
+          </a-tab-pane>
+
+          <!-- Logs 标签页 -->
+          <a-tab-pane key="logs" tab="日志">
+            <div class="logs-container">
+              <a-timeline>
+                <a-timeline-item
+                  v-for="log in selectedExperiment.logs"
+                  :key="log.id"
+                  :color="log.type === 'error' ? 'red' : log.type === 'warning' ? 'orange' : 'blue'"
+                >
+                  <p><strong>{{ log.time }}</strong></p>
+                  <p>{{ log.message }}</p>
+                </a-timeline-item>
+              </a-timeline>
+            </div>
+          </a-tab-pane>
+        </a-tabs>
       </div>
     </a-modal>
   </div>
@@ -363,13 +429,22 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   LoadingOutlined,
-  PauseCircleOutlined
+  PauseCircleOutlined,
+  EyeOutlined,
+  StopOutlined,
+  DeleteOutlined,
+  ClearOutlined,
+  DatabaseOutlined,
+  ClusterOutlined,
+  NodeIndexOutlined
 } from '@ant-design/icons-vue'
+import ClusterFedSAKView from '@/components/ClusterFedSAKView.vue'
 
 // 响应式数据
 const loading = ref(false)
 const createModalVisible = ref(false)
 const detailModalVisible = ref(false)
+const detailActiveTab = ref('overview')
 const createFormRef = ref()
 const selectedExperiment = ref(null)
 
@@ -413,10 +488,29 @@ const createRules = {
 const experiments = ref([
   {
     id: 1,
-    name: 'CIFAR-10 联邦学习实验',
-    algorithm: 'FedAvg',
+    name: 'CIFAR-10 分簇联邦学习实验',
+    algorithm: 'Cluster-FedSAK',
     status: 'running',
-    progress: 65,
+    progress: 0, // 从0开始，这样可以看到完整的聚类过程
+    participants: 20,
+    dataset: 'CIFAR-10',
+    learningRate: 0.01,
+    duration: 5400000, // 毫秒
+    createTime: '2025-01-20 09:30:00',
+    description: '使用分簇-FedSAK算法在CIFAR-10数据集上进行图像分类实验，支持客户端异构特征聚类',
+    logs: [
+      { id: 1, time: '09:30:00', message: '分簇联邦学习实验启动', type: 'info' },
+      { id: 2, time: '09:35:00', message: '客户端聚类完成，生成4个簇', type: 'success' },
+      { id: 3, time: '10:00:00', message: '第0轮初始化完成，开始FedSAK训练', type: 'info' },
+      { id: 4, time: '10:30:00', message: '全连接阶段，所有客户端均连接至各簇代理', type: 'success' }
+    ]
+  },
+  {
+    id: 2,
+    name: 'CIFAR-10 传统联邦学习',
+    algorithm: 'FedAvg',
+    status: 'completed',
+    progress: 100,
     participants: 5,
     dataset: 'CIFAR-10',
     learningRate: 0.01,
@@ -430,7 +524,7 @@ const experiments = ref([
     ]
   },
   {
-    id: 2,
+    id: 3,
     name: 'MNIST 手写数字识别',
     algorithm: 'FedProx',
     status: 'completed',
@@ -448,7 +542,7 @@ const experiments = ref([
     ]
   },
   {
-    id: 3,
+    id: 4,
     name: '文本分类实验',
     algorithm: 'SCAFFOLD',
     status: 'failed',
@@ -626,7 +720,33 @@ const handleCreateExperiment = async () => {
 
 const showDetail = (record) => {
   selectedExperiment.value = record
+  detailActiveTab.value = record.algorithm === 'Cluster-FedSAK' ? 'cluster-fedsak' : 'overview'
   detailModalVisible.value = true
+}
+
+const handleExperimentUpdate = ({ round, data }) => {
+  if (selectedExperiment.value) {
+    // 更新实验进度和状态
+    selectedExperiment.value.progress = Math.min(100, Math.round((round / 100) * 100))
+    
+    // 添加日志条目
+    const newLog = {
+      id: Date.now(),
+      time: new Date().toLocaleTimeString(),
+      message: `轮次 ${round} 完成，当前指标更新`,
+      type: 'info'
+    }
+    
+    if (!selectedExperiment.value.logs) {
+      selectedExperiment.value.logs = []
+    }
+    selectedExperiment.value.logs.unshift(newLog)
+    
+    // 限制日志条数
+    if (selectedExperiment.value.logs.length > 50) {
+      selectedExperiment.value.logs = selectedExperiment.value.logs.slice(0, 50)
+    }
+  }
 }
 
 const startExperiment = (record) => {
@@ -763,6 +883,27 @@ const formatDuration = (duration) => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* 实验详情模态框样式 */
+.cluster-fedsak-container {
+  height: 80vh;
+  max-height: 900px;
+  padding: 0;
+  overflow: auto;
+  background: #f5f5f5;
+}
+
+.metrics-placeholder {
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logs-container {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .experiments {
@@ -777,5 +918,30 @@ const formatDuration = (duration) => {
   .action-section {
     width: 100%;
   }
+  
+  .cluster-fedsak-container {
+    height: 60vh;
+  }
+}
+</style>
+
+<!-- 全局样式，用于模态框 -->
+<style>
+.experiment-detail-modal .ant-modal-body {
+  padding: 16px !important;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.experiment-detail-modal .ant-tabs-content-holder {
+  padding: 16px 0 !important;
+}
+
+.experiment-detail-modal .ant-tabs-tab {
+  padding: 8px 16px !important;
+}
+
+.experiment-detail-modal .ant-modal-content {
+  overflow: visible !important;
 }
 </style>
