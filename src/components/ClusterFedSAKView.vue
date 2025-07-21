@@ -48,9 +48,9 @@
 
     <!-- 主要内容区域 -->
     <div class="main-content">
-      <!-- 上半部分：拓扑图和进度面板 -->
-      <div class="top-section">
-        <!-- 左侧拓扑图 (60%) -->
+      <!-- 左侧区域：拓扑图 + 实时指标 (60%) -->
+      <div class="left-section">
+        <!-- 拓扑图区域 -->
         <div class="topology-section">
           <ClusterTopologyCard
             :experiment-data="experimentData"
@@ -60,23 +60,8 @@
             @round-change="handleRoundChange"
           />
         </div>
-
-        <!-- 右侧进度面板 (40%) -->
-        <div class="progress-section">
-          <ProgressPanel
-            :experiment-data="experimentData"
-            :current-round="currentRound"
-            :total-rounds="totalRounds"
-            :is-live="isLiveMode"
-            :show-replay-controls="!isLiveMode"
-            @round-change="handleRoundChange"
-            @replay-control="handleReplayControl"
-          />
-        </div>
-      </div>
-
-      <!-- 下半部分：指标面板 -->
-      <div class="bottom-section">
+        
+        <!-- 实时指标区域 (左下角) -->
         <div class="metrics-section">
           <MetricsTabs
             :experiment-data="experimentData"
@@ -85,6 +70,19 @@
             @metric-update="handleMetricUpdate"
           />
         </div>
+      </div>
+
+      <!-- 右侧进度面板 (40%) -->
+      <div class="progress-section">
+        <ProgressPanel
+          :experiment-data="experimentData"
+          :current-round="currentRound"
+          :total-rounds="totalRounds"
+          :is-live="isLiveMode"
+          :show-replay-controls="!isLiveMode"
+          @round-change="handleRoundChange"
+          @replay-control="handleReplayControl"
+        />
       </div>
     </div>
 
@@ -467,7 +465,7 @@ onUnmounted(() => {
 
 <style scoped>
 .cluster-fedsak-view {
-  height: 100%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
@@ -499,33 +497,25 @@ onUnmounted(() => {
 .main-content {
   flex: 1;
   display: flex;
-  flex-direction: column;
   gap: 16px;
   padding: 16px;
   overflow: visible;
-  min-height: 0;
   background: #f5f5f5;
 }
 
-.top-section {
-  display: flex;
-  gap: 16px;
-  height: 500px;
-  min-height: 400px;
-}
-
-.bottom-section {
-  height: 250px;
-  min-height: 200px;
-  flex-shrink: 0;
-}
-
-.topology-section {
+.left-section {
   flex: 0 0 60%;
   display: flex;
   flex-direction: column;
+  gap: 16px;
   overflow: visible;
-  height: 100%;
+}
+
+.topology-section {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
 }
 
 .progress-section {
@@ -533,15 +523,15 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   overflow: visible;
-  height: 100%;
+  height: auto;
+  max-height: none;
 }
 
 .metrics-section {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   overflow: visible;
-  height: 100%;
 }
 
 .settings-content h4 {
@@ -572,23 +562,20 @@ onUnmounted(() => {
     flex-direction: column;
   }
   
-  .topology-section {
+  .left-section {
     flex: none;
-    height: 400px;
   }
   
-  .right-panels {
+  .topology-section {
     flex: none;
-    flex-direction: row;
-    height: 300px;
   }
   
   .progress-section {
-    flex: 0 0 40%;
+    flex: none;
   }
   
   .metrics-section {
-    flex: 0 0 60%;
+    flex: none;
   }
 }
 
@@ -601,17 +588,23 @@ onUnmounted(() => {
   .main-content {
     padding: 8px;
     gap: 8px;
-  }
-  
-  .right-panels {
     flex-direction: column;
-    height: auto;
   }
   
-  .progress-section,
+  .left-section {
+    flex: none;
+  }
+  
+  .topology-section {
+    flex: none;
+  }
+  
+  .progress-section {
+    flex: none;
+  }
+  
   .metrics-section {
     flex: none;
-    height: 300px;
   }
 }
 </style>

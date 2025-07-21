@@ -590,7 +590,6 @@ onMounted(async () => {
 
 <style scoped>
 .cluster-topology-card {
-  height: 100%;
   padding: 0;
   margin: 0;
 }

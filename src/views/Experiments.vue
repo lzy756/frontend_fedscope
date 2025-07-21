@@ -338,7 +338,7 @@
       title="实验详情"
       width="1400px"
       :footer="null"
-      :style="{ top: '20px' }"
+      :style="{ top: '20px'}"
       wrap-class-name="experiment-detail-modal"
     >
       <div v-if="selectedExperiment">
@@ -887,6 +887,7 @@ const formatDuration = (duration) => {
 .cluster-fedsak-container {
   height: 80vh;
   max-height: 900px;
+  max-width: 1300px;
   padding: 0;
   overflow: auto;
   background: #f5f5f5;

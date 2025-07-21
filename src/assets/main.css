@@ -40,5 +40,15 @@ body {
 
 /* 确保内容区域不会溢出 */
 .ant-layout-content {
-  overflow-x: auto;
+  overflow: visible;
 }
+
+/* 修复Ant Design Modal的滚动条问题 */
+.ant-modal-body {
+  overflow: visible !important;
+  max-height: none !important;
+}
+/* div.ant-modal-body {
+  overflow: visible !important;
+  max-height: none !important;
+} */

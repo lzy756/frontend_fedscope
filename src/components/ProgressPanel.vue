@@ -343,7 +343,6 @@ watch(() => props.currentRound, (newVal) => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
 }
 
 .progress-section {
@@ -403,7 +402,7 @@ watch(() => props.currentRound, (newVal) => {
 }
 
 .cluster-status-card {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .cluster-list {

@@ -488,16 +488,18 @@ onMounted(async () => {
 
 <style scoped>
 .metrics-tabs {
-  height: 100%;
   overflow: visible;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .chart-container {
-  height: 200px;
+  height: 250px;
   width: 100%;
   padding: 10px;
   box-sizing: border-box;
   overflow: visible;
+  position: relative;
 }
 
 .chart-controls {
@@ -517,10 +519,10 @@ onMounted(async () => {
 }
 
 :deep(.ant-tabs-content) {
-  height: calc(100% - 46px);
+  height: auto;
 }
 
 :deep(.ant-tabs-tabpane) {
-  height: 100%;
+  height: auto;
 }
 </style>

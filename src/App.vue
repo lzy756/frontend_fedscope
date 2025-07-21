@@ -281,7 +281,7 @@ const handleMenuClick = ({ key }) => {
 
 .app-main {
   background: #f0f2f5;
-  overflow-x: hidden;
+  overflow: visible;
   min-height: calc(100vh - 64px);
   padding: 0;
 }
