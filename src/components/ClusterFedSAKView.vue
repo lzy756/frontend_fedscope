@@ -499,6 +499,7 @@ onUnmounted(() => {
   display: flex;
   gap: 16px;
   padding: 16px;
+  align-items: stretch;
   overflow: visible;
   background: #f5f5f5;
 }

@@ -31,30 +31,39 @@
         </a-tab-pane>
         
         <a-tab-pane key="convergence" tab="收敛分析">
-          <div class="chart-container" ref="convergenceChartRef"></div>
+          <!-- <div class="chart-container" ref="convergenceChartRef"></div> -->
           <div class="convergence-summary">
-            <a-row :gutter="16">
-              <a-col span="8">
-                <a-statistic
-                  title="收敛轮次"
-                  :value="convergenceStats.convergedAt"
-                  suffix="轮"
-                />
+            <a-row :gutter="[16, 16]">
+              <a-col :span="{ xs: 24, sm: 12, md: 8 }">
+                <a-card class="summary-card" hoverable>
+                  <a-statistic
+                    title="收敛轮次"
+                    :value="convergenceStats.convergedAt"
+                    suffix="轮"
+                    :value-style="{ color: '#1890ff' }"
+                  />
+                </a-card>
               </a-col>
-              <a-col span="8">
-                <a-statistic
-                  title="最终损失"
-                  :value="convergenceStats.finalLoss"
-                  :precision="4"
-                />
+              <a-col :span="{ xs: 24, sm: 12, md: 8 }">
+                <a-card class="summary-card" hoverable>
+                  <a-statistic
+                    title="最终损失"
+                    :value="convergenceStats.finalLoss"
+                    :precision="4"
+                    :value-style="{ color: '#52c41a' }"
+                  />
+                </a-card>
               </a-col>
-              <a-col span="8">
-                <a-statistic
-                  title="收敛速度"
-                  :value="convergenceStats.convergenceRate"
-                  suffix="%/轮"
-                  :precision="2"
-                />
+              <a-col :span="{ xs: 24, sm: 12, md: 8 }">
+                <a-card class="summary-card" hoverable>
+                  <a-statistic
+                    title="收敛速度"
+                    :value="convergenceStats.convergenceRate"
+                    suffix="%/轮"
+                    :precision="2"
+                    :value-style="{ color: '#faad14' }"
+                  />
+                </a-card>
               </a-col>
             </a-row>
           </div>
@@ -203,12 +212,7 @@ const initLossChart = () => {
         data: metricsData.value.fedavgLoss,
         smooth: true,
         lineStyle: { width: 2 },
-        itemStyle: { color: '#1890ff' },
-        markPoint: {
-          data: [
-            { type: 'min', name: '最小值' }
-          ]
-        }
+        itemStyle: { color: '#1890ff' }
       },
       {
         name: 'FedSAK正则损失',
@@ -216,19 +220,13 @@ const initLossChart = () => {
         data: metricsData.value.fedsakLoss,
         smooth: true,
         lineStyle: { width: 2 },
-        itemStyle: { color: '#52c41a' },
-        markPoint: {
-          data: [
-            { type: 'min', name: '最小值' }
-          ]
-        }
+        itemStyle: { color: '#52c41a' }
       }
     ]
   }
   
   lossChart.setOption(option)
 }
-
 // 初始化准确度图表
 const initAccuracyChart = () => {
   if (!accuracyChartRef.value) return
@@ -292,12 +290,7 @@ const initAccuracyChart = () => {
         data: metricsData.value.fedavgAccuracy,
         smooth: true,
         lineStyle: { width: 2 },
-        itemStyle: { color: '#1890ff' },
-        markPoint: {
-          data: [
-            { type: 'max', name: '最大值' }
-          ]
-        }
+        itemStyle: { color: '#1890ff' }
       },
       {
         name: 'FedSAK准确度',
@@ -305,16 +298,11 @@ const initAccuracyChart = () => {
         data: metricsData.value.fedsakAccuracy,
         smooth: true,
         lineStyle: { width: 2 },
-        itemStyle: { color: '#52c41a' },
-        markPoint: {
-          data: [
-            { type: 'max', name: '最大值' }
-          ]
-        }
+        itemStyle: { color: '#52c41a' }
       }
     ]
   }
-  
+  // console.log('accuracyChart:', accuracyChart)
   accuracyChart.setOption(option)
 }
 
@@ -339,31 +327,113 @@ const initConvergenceChart = () => {
     title: {
       text: '收敛分析',
       left: 'center',
-      textStyle: { fontSize: 14 }
+      textStyle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333'
+      }
     },
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'cross' }
+      axisPointer: {
+        type: 'cross',
+        lineStyle: {
+          color: '#333',
+          width: 1,
+          type: 'dashed'
+        }
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      borderColor: '#e8e8e8',
+      borderWidth: 1,
+      textStyle: {
+        color: '#333'
+      },
+      padding: [10, 15]
     },
     legend: {
-      top: 30,
-      data: ['损失改善率(%)', '损失梯度']
+      top: 20,
+      left: 'center',
+      data: ['损失改善率(%)', '损失梯度'],
+      itemGap: 20,
+      textStyle: {
+        fontSize: 13,
+        color: '#555'
+      }
+    },
+    grid: {
+      top: 60,
+      bottom: 40,
+      left: 60,
+      right: 60,
+      containLabel: true
     },
     xAxis: {
       type: 'category',
       data: metricsData.value.rounds.slice(1),
-      name: '轮次'
+      name: '轮次',
+      nameGap: 20,
+      nameTextStyle: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: '#333'
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#333'
+        }
+      },
+      axisLabel: {
+        color: '#555'
+      }
     },
     yAxis: [
       {
         type: 'value',
         name: '改善率(%)',
-        position: 'left'
+        position: 'left',
+        nameGap: 30,
+        nameTextStyle: {
+          fontSize: 13,
+          fontWeight: 'bold',
+          color: '#333'
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#333'
+          }
+        },
+        axisLabel: {
+          color: '#555',
+          formatter: '{value}%'
+        },
+        splitLine: {
+          lineStyle: {
+            color: '#f0f0f0'
+          }
+        }
       },
       {
         type: 'value',
         name: '梯度',
-        position: 'right'
+        position: 'right',
+        nameGap: 30,
+        nameTextStyle: {
+          fontSize: 13,
+          fontWeight: 'bold',
+          color: '#333'
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#333'
+          }
+        },
+        axisLabel: {
+          color: '#555'
+        },
+        splitLine: {
+          show: false
+        }
       }
     ],
     series: [
@@ -371,17 +441,46 @@ const initConvergenceChart = () => {
         name: '损失改善率(%)',
         type: 'bar',
         data: convergenceData,
-        itemStyle: { color: '#1890ff' },
-        yAxisIndex: 0
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#40a9ff' },
+            { offset: 1, color: '#1890ff' }
+          ])
+        },
+        yAxisIndex: 0,
+        barWidth: '60%',
+        emphasis: {
+          itemStyle: {
+            color: '#1890ff'
+          }
+        }
       },
       {
         name: '损失梯度',
         type: 'line',
         data: gradientData,
         smooth: true,
-        lineStyle: { width: 2 },
-        itemStyle: { color: '#52c41a' },
-        yAxisIndex: 1
+        lineStyle: {
+          width: 3,
+          color: '#52c41a'
+        },
+        itemStyle: {
+          color: '#52c41a'
+        },
+        yAxisIndex: 1,
+        symbol: 'circle',
+        symbolSize: 6,
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(82, 196, 26, 0.3)' },
+            { offset: 1, color: 'rgba(82, 196, 26, 0.05)' }
+          ])
+        },
+        emphasis: {
+          itemStyle: {
+            color: '#389e0d'
+          }
+        }
       }
     ]
   }
@@ -474,7 +573,6 @@ onMounted(async () => {
   await nextTick()
   generateMockData()
   initLossChart()
-  initAccuracyChart()
   initConvergenceChart()
   
   // 监听窗口大小变化
@@ -483,6 +581,16 @@ onMounted(async () => {
     accuracyChart?.resize()
     convergenceChart?.resize()
   })
+})
+
+// 监听标签页切换
+watch(activeTab, (newTab) => {
+  if (newTab === 'accuracy' && !accuracyChart) {
+    // 使用 setTimeout 确保 DOM 完全渲染并具有尺寸后再初始化图表
+    setTimeout(() => {
+      initAccuracyChart()
+    }, 10)
+  }
 })
 </script>
 
@@ -513,9 +621,37 @@ onMounted(async () => {
 
 .convergence-summary {
   margin-top: 16px;
-  padding: 12px;
-  background: #f5f5f5;
-  border-radius: 6px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+}
+
+.summary-card {
+  height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+:deep(.summary-card .ant-statistic-title) {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+}
+
+:deep(.summary-card .ant-statistic-content) {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+:deep(.ant-tabs-content) {
+  height: auto;
 }
 
 :deep(.ant-tabs-content) {
