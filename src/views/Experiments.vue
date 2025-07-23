@@ -885,7 +885,7 @@ const formatDuration = (duration) => {
 
 /* 实验详情模态框样式 */
 .cluster-fedsak-container {
-  height: 80vh;
+  height: 70vh;
   max-height: 900px;
   max-width: 1300px;
   padding: 0;
@@ -931,7 +931,7 @@ const formatDuration = (duration) => {
 .experiment-detail-modal .ant-modal-body {
   padding: 16px !important;
   max-height: 80vh;
-  overflow-y: auto;
+  /* overflow-y: auto; */
 }
 
 .experiment-detail-modal .ant-tabs-content-holder {

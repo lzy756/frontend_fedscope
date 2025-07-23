@@ -44,10 +44,10 @@ body {
 }
 
 /* 修复Ant Design Modal的滚动条问题 */
-.ant-modal-body {
+/* .ant-modal-body {
   overflow: visible !important;
   max-height: none !important;
-}
+} */
 /* div.ant-modal-body {
   overflow: visible !important;
   max-height: none !important;
