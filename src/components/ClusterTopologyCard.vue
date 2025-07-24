@@ -80,47 +80,142 @@
       <div class="formula-content">
         <h4>簇内 FedAvg</h4>
         <div class="formula-block">
-          <div class="formula">
-            θᵢ⁽ᵗ⁺¹⁾ = Σ(c∈𝒞ᵢ) (nᶜ/Nᵢ) · θᶜ⁽ᵗ⁾
-          </div>
+          <div class="formula" v-html="katex.renderToString('\\theta_i^{(t+1)} = \\sum_{c \\in \\mathcal{C}_i} \\frac{n_c}{N_i}\\,\\theta_c^{(t)}, \\qquad N_i = \\sum_{c \\in \\mathcal{C}_i} n_c')"></div>
           <div class="formula-desc">
-            其中 Nᵢ = Σ(c∈𝒞ᵢ) nᶜ，nᶜ为客户端c的样本数
+            其中 nᶜ 为客户端c的样本数
           </div>
         </div>
         
         <h4>簇间 FedSAK</h4>
         <div class="formula-block">
           <div class="formula-step">
-            <strong>1. 张量堆叠:</strong>
-            <div class="formula">W⁽ˡ⁾ = stack(θ₁⁽ˡ⁾, ..., θₖ⁽ˡ⁾)</div>
+            <strong>1. 张量堆叠：</strong>
+            <div class="formula" v-html="katex.renderToString('W^{(l)} \\;=\\; \\mathrm{stack}\\bigl(\\theta_1^{(l)},\\,\\theta_2^{(l)},\\,\\dots,\\,\\theta_K^{(l)}\\bigr)')"></div>
           </div>
           <div class="formula-step">
-            <strong>2. 轨迹范数正则:</strong>
-            <div class="formula">
-              𝓛ᵣ = λ Σ(l=1 to L) Σ(k=1 to p) ‖W⁽ˡ⁾₍ₖ₎‖*
+            <strong>2. 轨迹范数正则化损失：</strong>
+            <div class="formula" v-html="katex.renderToString('\\mathcal{L}_r = \\lambda \\sum_{l=1}^{L} \\sum_{k=1}^{p} \\bigl\\|\\,W_{(k)}^{(l)}\\bigr\\|_{*}')"></div>
+            <div class="formula-desc">
+              其中 <span v-html="katex.renderToString('W_{(k)}^{(l)}')"></span> 表示对 <span v-html="katex.renderToString('W^{(l)}')"></span> 按第 <span v-html="katex.renderToString('k')"></span> 模展开得到的矩阵，<span v-html="katex.renderToString('|\\cdot|_*')"></span> 为核范数。
             </div>
           </div>
           <div class="formula-step">
-            <strong>3. 子梯度更新:</strong>
-            <div class="formula">
-              θᵢ⁽ˡ⁾ ← θᵢ⁽ˡ⁾ - ηᵩ(UVᵀ)ᵢ
+            <strong>3. SVD 分解：</strong>
+            <div class="formula" v-html="katex.renderToString('W_{(k)}^{(l)} = U_k\\,\\Sigma_k\\,V_k^{\\top}')"></div>
+          </div>
+          <div class="formula-step">
+            <strong>4. 子梯度：</strong>
+            <div class="formula" v-html="katex.renderToString('\\nabla_{W_{(k)}^{(l)}} \\bigl\\|W_{(k)}^{(l)}\\bigr\\|_{*} = U_k\\,V_k^{\\top}')"></div>
+          </div>
+          <div class="formula-step">
+            <strong>5. 切片映射：</strong>
+            <div class="formula" v-html="katex.renderToString('G_i^{(l)} = \\mathrm{slice}_i\\Bigl(\\sum_{k=1}^{p} U_k\\,V_k^{\\top}\\Bigr)')"></div>
+          </div>
+          <div class="formula-step">
+            <strong>6. 参数更新：</strong>
+            <div class="formula" v-html="katex.renderToString('\\theta_i^{(l)} \\;\\leftarrow\\; \\theta_i^{(l)} - \\eta_w \\, G_i^{(l)}')"></div>
+          </div>
+        </div>
+        
+        <h4>符号释义</h4>
+        <div class="formula-block">
+          <div class="formula-desc">
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('L')"></span>
+              <span class="symbol-colon">：</span>
+              <span>模型总层数</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('p')"></span>
+              <span class="symbol-colon">：</span>
+              <span>张量阶数（层参数展成张量后的阶数）</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('K')"></span>
+              <span class="symbol-colon">：</span>
+              <span>簇的数量</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\theta_c^{(t)}')"></span>
+              <span class="symbol-colon">：</span>
+              <span>客户端<span v-html="katex.renderToString('c')"></span>在轮次<span v-html="katex.renderToString('t')"></span>时的模型参数</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\theta_i^{(l)}')"></span>
+              <span class="symbol-colon">：</span>
+              <span>第<span v-html="katex.renderToString('i')"></span>簇模型在第<span v-html="katex.renderToString('l')"></span>层的参数</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('n_c')"></span>
+              <span class="symbol-colon">：</span>
+              <span>客户端<span v-html="katex.renderToString('c')"></span>的数据量</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('N_i')"></span>
+              <span class="symbol-colon">：</span>
+              <span>簇<span v-html="katex.renderToString('\\mathcal{C}_i')"></span>中所有客户端总样本数</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\lambda')"></span>
+              <span class="symbol-colon">：</span>
+              <span>轨迹范数正则化系数</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\eta_w')"></span>
+              <span class="symbol-colon">：</span>
+              <span>簇间聚合的学习率</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('W^{(l)}')"></span>
+              <span class="symbol-colon">：</span>
+              <span>第<span v-html="katex.renderToString('l')"></span>层簇模型参数堆叠张量</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('W_{(k)}^{(l)}')"></span>
+              <span class="symbol-colon">：</span>
+              <span>按第<span v-html="katex.renderToString('k')"></span>模展开后的矩阵形式</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('U_k,\\Sigma_k,V_k')"></span>
+              <span class="symbol-colon">：</span>
+              <span><span v-html="katex.renderToString('W_{(k)}^{(l)}')"></span>的 SVD 分解结果</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('G_i^{(l)}')"></span>
+              <span class="symbol-colon">：</span>
+              <span>第<span v-html="katex.renderToString('i')"></span>簇在第<span v-html="katex.renderToString('l')"></span>层对应的子梯度切片</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('|\\cdot|_*')"></span>
+              <span class="symbol-colon">：</span>
+              <span>矩阵核范数（trace norm）</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\mathrm{slice}_i(\\cdot)')"></span>
+              <span class="symbol-colon">：</span>
+              <span>取张量在"簇"维度上第<span v-html="katex.renderToString('i')"></span>个索引对应切片</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\mathrm{stack}(\\cdot)')"></span>
+              <span class="symbol-colon">：</span>
+              <span>沿新维度将向量/矩阵堆叠为张量</span>
             </div>
           </div>
         </div>
         
         <h4>当前参数</h4>
         <a-descriptions :column="2" size="small">
-          <a-descriptions-item label="正则化系数 λ">
-            {{ currentParams.lambda }}
+          <a-descriptions-item label="正则化系数">
+            <span v-html="katex.renderToString('\\lambda = ' + currentParams.lambda)"></span>
           </a-descriptions-item>
-          <a-descriptions-item label="学习率 ηᵩ">
-            {{ currentParams.etaW }}
+          <a-descriptions-item label="学习率">
+            <span v-html="katex.renderToString('\\eta_w = ' + currentParams.etaW)"></span>
           </a-descriptions-item>
-          <a-descriptions-item label="簇数 K">
-            {{ currentParams.numClusters }}
+          <a-descriptions-item label="簇数">
+            <span v-html="katex.renderToString('K = ' + currentParams.numClusters)"></span>
           </a-descriptions-item>
           <a-descriptions-item label="客户端数">
-            {{ currentParams.totalClients }}
+            <span v-html="katex.renderToString('C = ' + currentParams.totalClients)"></span>
           </a-descriptions-item>
         </a-descriptions>
       </div>
@@ -707,6 +802,26 @@ onMounted(async () => {
   color: #666;
   text-align: center;
   font-style: italic;
+}
+
+.symbol-definition {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+  text-align: left;
+  font-style: normal;
+}
+
+.symbol-definition .symbol-label {
+  margin-right: 8px;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+}
+
+.symbol-definition .symbol-colon {
+  margin: 0 8px;
 }
 
 .node-logs {

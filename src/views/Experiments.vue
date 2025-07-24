@@ -931,7 +931,6 @@ const formatDuration = (duration) => {
 .experiment-detail-modal .ant-modal-body {
   padding: 16px !important;
   max-height: 80vh;
-  /* overflow-y: auto; */
 }
 
 .experiment-detail-modal .ant-tabs-content-holder {

@@ -5,6 +5,8 @@ import App from './App.vue'
 import Antd from 'ant-design-vue'
 import 'ant-design-vue/dist/reset.css'
 import { createRouter, createWebHistory } from 'vue-router'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
 
 // 导入路由组件
 import Dashboard from './views/Dashboard.vue'
@@ -31,6 +33,7 @@ const router = createRouter({
 })
 
 const app = createApp(App)
+app.config.globalProperties.katex = katex
 app.use(Antd)
 app.use(router)
 app.mount('#app')
