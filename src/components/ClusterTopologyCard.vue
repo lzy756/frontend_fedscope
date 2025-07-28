@@ -713,7 +713,7 @@ const getEdgeWidthByType = (edge) => {
     case 'cluster-client-fading':
       return 1  // L1->L0: 消失连接较细
     case 'cluster-client-active':
-      return 3  // L1->L0: 参与训练连接较粗
+      return 2  // L1->L0: 参与训练连接较粗
     case 'cluster-client-inactive':
       return 1  // L1->L0: 未参与训练连接较细
     default:
@@ -942,7 +942,7 @@ onMounted(async () => {
 
 .legend-line.full-connect {
   background-color: #bfbfbf;
-  opacity: 0.3;
+  opacity: 0.7;
   height: 1px;
 }
 
