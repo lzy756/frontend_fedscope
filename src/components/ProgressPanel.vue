@@ -39,8 +39,17 @@
           :current="currentPhase" 
           size="small" 
           direction="vertical"
-          :items="phaseSteps"
-        />
+        >
+          <a-step 
+            v-for="(step, index) in phaseSteps" 
+            :key="index"
+            :title="step.title"
+          >
+            <template #description>
+              <MathTextRenderer :text="step.description" />
+            </template>
+          </a-step>
+        </a-steps>
       </div>
 
       <!-- 实时状态 -->
@@ -135,6 +144,7 @@ import {
   PauseCircleOutlined, 
   StopOutlined 
 } from '@ant-design/icons-vue'
+import MathTextRenderer from './MathTextRenderer.vue'
 
 const props = defineProps({
   experimentData: {
@@ -226,10 +236,10 @@ const experimentStatus = computed(() => {
 
 // 阶段步骤
 const phaseSteps = ref([
-  { title: '模型下发', description: 'θ̃ᵢ⁽ᵗ⁾ → 代理 → 客户端' },
-  { title: '本地训练', description: '客户端执行E个epoch' },
-  { title: '簇内聚合', description: 'FedAvg: θᵢ⁽ᵗ⁺¹⁾' },
-  { title: '簇间聚合', description: 'FedSAK: 轨迹范数正则化' }
+  { title: '模型下发', description: '$\\tilde{\\theta}_i^{(t)} \\rightarrow$ 代理 $\\rightarrow$ 客户端' },
+  { title: '本地训练', description: '客户端执行 $E$ 个epoch，更新 $\\theta_{k}^{(t+1)}$' },
+  { title: '簇内聚合', description: 'FedAvg: $\\theta_i^{(t+1)} = \\frac{1}{|C_i|} \\sum_{k \\in C_i} \\theta_k^{(t+1)}$' },
+  { title: '簇间聚合', description: 'FedSAK: $\\min_{\\Theta} \\frac{1}{M} \\sum_{i=1}^{M} \\frac{1}{n_i} \\sum_{j=1}^{n_i} \\mathcal{L}(\\mathcal{F}_i(\\Theta; \\mathbf{x}_i^j), y_i^j) + \\lambda \\|\\mathcal{W}\\|_*$' }
 ])
 
 // 模拟簇状态数据
@@ -282,6 +292,8 @@ const clusterStatus = ref([
 
 // 模拟阶段切换
 let phaseTimer = null
+let currentPhaseInRound = 0 // 当前轮次内的阶段（0-3）
+
 const simulatePhaseProgress = () => {
   if (!props.isLive) return
   
@@ -290,7 +302,15 @@ const simulatePhaseProgress = () => {
   }
   
   phaseTimer = setInterval(() => {
-    currentPhase.value = (currentPhase.value + 1) % 4
+    // 更新当前阶段
+    currentPhaseInRound = (currentPhaseInRound + 1) % 4
+    currentPhase.value = currentPhaseInRound
+    
+    // 只有当阶段回到0（模型下发）时才增加轮次
+    if (currentPhaseInRound === 0 && props.currentRound < props.totalRounds) {
+      // 触发轮次变化事件，通知父组件
+      emit('roundChange', props.currentRound + 1)
+    }
     
     // 更新簇状态
     clusterStatus.value.forEach(cluster => {
@@ -299,7 +319,7 @@ const simulatePhaseProgress = () => {
         cluster.avgLoss = Math.max(0.1, cluster.avgLoss * (0.98 + Math.random() * 0.02))
       }
     })
-  }, 3000)
+  }, 3000) // 每3秒切换一个阶段
 }
 
 // 回放控制方法
@@ -374,6 +394,19 @@ watch(() => props.currentRound, (newVal) => {
   font-weight: 500;
   margin-bottom: 8px;
   color: #666;
+}
+
+/* 优化 KaTeX 在 Steps 中的显示 */
+.phase-indicator :deep(.ant-steps-item-description) {
+  margin-top: 4px;
+}
+
+.phase-indicator :deep(.katex) {
+  font-size: 0.9em;
+}
+
+.phase-indicator :deep(.katex-container) {
+  margin: 0 2px;
 }
 
 .status-section {

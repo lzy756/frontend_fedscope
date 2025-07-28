@@ -326,8 +326,7 @@ const startDataSimulation = () => {
   
   heartbeatInterval = setInterval(() => {
     if (isLiveMode.value && wsStatus.connected) {
-      // 模拟接收新数据
-      currentRound.value = Math.min(totalRounds.value, currentRound.value + 1)
+      // 模拟接收新数据 - 不在这里更新轮次，由ProgressPanel控制
       wsStatus.messageCount++
       wsStatus.latency = 30 + Math.floor(Math.random() * 30)
       
@@ -376,6 +375,7 @@ const handleNodeClick = (node) => {
 }
 
 const handleRoundChange = (round) => {
+  console.log(`ProgressPanel 请求轮次变化: ${currentRound.value} -> ${round}`)
   currentRound.value = round
   // TODO: 获取历史快照数据
 }

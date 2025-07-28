@@ -8,7 +8,10 @@
             @click="showFormulaModal"
             title="查看公式详情"
           >
-            <template #icon>∑</template>
+            <!-- <template #icon>∑</template> -->
+            <template #icon>
+              <component :is="ZoomInOutlined" />
+            </template>
             公式
           </a-button>
           <a-button 
@@ -44,6 +47,14 @@
           <span>簇代理 (L2)</span>
         </div>
         <div class="legend-item">
+          <div class="legend-color cluster"></div>
+          <span>客户端簇 (L1)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color client-participating"></div>
+          <span>参与训练客户端 (L0)</span>
+        </div>
+        <div class="legend-item">
           <div class="legend-color client-online"></div>
           <span>在线客户端 (L0)</span>
         </div>
@@ -53,15 +64,19 @@
         </div>
         <div class="legend-item">
           <div class="legend-line agg-proxy"></div>
-          <span>聚合器连接</span>
+          <span>L3→L2 聚合器连接</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-line proxy-cluster"></div>
+          <span>L2→L1 簇管理连接</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-line cluster-client-active"></div>
+          <span>L1→L0 参与训练连接</span>
         </div>
         <div class="legend-item">
           <div class="legend-line full-connect"></div>
           <span>全连接阶段</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-line cluster-connect"></div>
-          <span>簇分配连接</span>
         </div>
         <div class="legend-item">
           <div class="legend-line fading-connect"></div>
@@ -89,31 +104,28 @@
         <h4>簇间 FedSAK</h4>
         <div class="formula-block">
           <div class="formula-step">
-            <strong>1. 张量堆叠：</strong>
-            <div class="formula" v-html="katex.renderToString('W^{(l)} \\;=\\; \\mathrm{stack}\\bigl(\\theta_1^{(l)},\\,\\theta_2^{(l)},\\,\\dots,\\,\\theta_K^{(l)}\\bigr)')"></div>
+            <strong>1. 构建张量堆叠结构：</strong>
+            <div class="formula" v-html="katex.renderToString('W^l = \\text{stack}(w_1^l, w_2^l, \\ldots, w_M^l)')"></div>
           </div>
           <div class="formula-step">
-            <strong>2. 轨迹范数正则化损失：</strong>
-            <div class="formula" v-html="katex.renderToString('\\mathcal{L}_r = \\lambda \\sum_{l=1}^{L} \\sum_{k=1}^{p} \\bigl\\|\\,W_{(k)}^{(l)}\\bigr\\|_{*}')"></div>
+            <strong>2. 定义正则化项：</strong>
+            <div class="formula" v-html="katex.renderToString('\\mathcal{L}_r = \\sum_{l=1}^L \\sum_{k=1}^{p} \\left\\| W_{(k)}^l \\right\\|_*')"></div>
             <div class="formula-desc">
-              其中 <span v-html="katex.renderToString('W_{(k)}^{(l)}')"></span> 表示对 <span v-html="katex.renderToString('W^{(l)}')"></span> 按第 <span v-html="katex.renderToString('k')"></span> 模展开得到的矩阵，<span v-html="katex.renderToString('|\\cdot|_*')"></span> 为核范数。
+              其中 <span v-html="katex.renderToString('W_{(k)}^l')"></span> 是张量在第 <span v-html="katex.renderToString('k')"></span> 模下的 unfolding 矩阵。
             </div>
           </div>
           <div class="formula-step">
-            <strong>3. SVD 分解：</strong>
-            <div class="formula" v-html="katex.renderToString('W_{(k)}^{(l)} = U_k\\,\\Sigma_k\\,V_k^{\\top}')"></div>
+            <strong>3. 次梯度下降优化共享层：</strong>
+            <div class="formula" v-html="katex.renderToString('\\frac{\\partial \\left\\| W_{(k)}^l \\right\\|_*}{\\partial W_{(k)}^l} = U V^\\top')"></div>
+            <div class="formula-desc">
+              其中 <span v-html="katex.renderToString('U')"></span> 和 <span v-html="katex.renderToString('V')"></span> 是 <span v-html="katex.renderToString('W_{(k)}^l')"></span> 的 SVD 分解结果。
+            </div>
           </div>
           <div class="formula-step">
-            <strong>4. 子梯度：</strong>
-            <div class="formula" v-html="katex.renderToString('\\nabla_{W_{(k)}^{(l)}} \\bigl\\|W_{(k)}^{(l)}\\bigr\\|_{*} = U_k\\,V_k^{\\top}')"></div>
-          </div>
-          <div class="formula-step">
-            <strong>5. 切片映射：</strong>
-            <div class="formula" v-html="katex.renderToString('G_i^{(l)} = \\mathrm{slice}_i\\Bigl(\\sum_{k=1}^{p} U_k\\,V_k^{\\top}\\Bigr)')"></div>
-          </div>
-          <div class="formula-step">
-            <strong>6. 参数更新：</strong>
-            <div class="formula" v-html="katex.renderToString('\\theta_i^{(l)} \\;\\leftarrow\\; \\theta_i^{(l)} - \\eta_w \\, G_i^{(l)}')"></div>
+            <div class="formula" v-html="katex.renderToString('\\tilde{w}_i^t = w_i^t - \\eta_w \\nabla \\mathcal{L}_r')"></div>
+            <div class="formula-desc">
+              对每个客户端上传的共享切片，执行一次梯度下降。
+            </div>
           </div>
         </div>
         
@@ -131,69 +143,49 @@
               <span>张量阶数（层参数展成张量后的阶数）</span>
             </div>
             <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('K')"></span>
+              <span class="symbol-label" v-html="katex.renderToString('M')"></span>
               <span class="symbol-colon">：</span>
-              <span>簇的数量</span>
+              <span>客户端总数</span>
             </div>
             <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('\\theta_c^{(t)}')"></span>
+              <span class="symbol-label" v-html="katex.renderToString('w_i^l')"></span>
               <span class="symbol-colon">：</span>
-              <span>客户端<span v-html="katex.renderToString('c')"></span>在轮次<span v-html="katex.renderToString('t')"></span>时的模型参数</span>
+              <span>客户端<span v-html="katex.renderToString('i')"></span>在第<span v-html="katex.renderToString('l')"></span>层的共享参数</span>
             </div>
             <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('\\theta_i^{(l)}')"></span>
+              <span class="symbol-label" v-html="katex.renderToString('W^l')"></span>
               <span class="symbol-colon">：</span>
-              <span>第<span v-html="katex.renderToString('i')"></span>簇模型在第<span v-html="katex.renderToString('l')"></span>层的参数</span>
+              <span>第<span v-html="katex.renderToString('l')"></span>层所有客户端共享参数堆叠成的张量</span>
             </div>
             <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('n_c')"></span>
+              <span class="symbol-label" v-html="katex.renderToString('\\mathcal{L}_r')"></span>
               <span class="symbol-colon">：</span>
-              <span>客户端<span v-html="katex.renderToString('c')"></span>的数据量</span>
+              <span>正则化损失 <span v-html="katex.renderToString('\\mathcal{L}_r = \\sum_{l=1}^L \\sum_{k=1}^{p} \\left\\| W_{(k)}^l \\right\\|_*')"></span></span>
             </div>
             <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('N_i')"></span>
+              <span class="symbol-label" v-html="katex.renderToString('W_{(k)}^l')"></span>
               <span class="symbol-colon">：</span>
-              <span>簇<span v-html="katex.renderToString('\\mathcal{C}_i')"></span>中所有客户端总样本数</span>
+              <span>张量<span v-html="katex.renderToString('W^l')"></span>在第<span v-html="katex.renderToString('k')"></span>模下的 unfolding 矩阵</span>
             </div>
             <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('\\lambda')"></span>
+              <span class="symbol-label" v-html="katex.renderToString('U, V')"></span>
               <span class="symbol-colon">：</span>
-              <span>轨迹范数正则化系数</span>
+              <span><span v-html="katex.renderToString('W_{(k)}^l')"></span>的 SVD 分解结果，用于计算迹范数的次梯度 <span v-html="katex.renderToString('\\frac{\\partial \\left\\| W_{(k)}^l \\right\\|_*}{\\partial W_{(k)}^l} = U V^\\top')"></span></span>
             </div>
             <div class="symbol-definition">
               <span class="symbol-label" v-html="katex.renderToString('\\eta_w')"></span>
               <span class="symbol-colon">：</span>
-              <span>簇间聚合的学习率</span>
+              <span>FedSAK 步长 (学习率)</span>
             </div>
             <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('W^{(l)}')"></span>
+              <span class="symbol-label" v-html="katex.renderToString('\\tilde{w}_i^t')"></span>
               <span class="symbol-colon">：</span>
-              <span>第<span v-html="katex.renderToString('l')"></span>层簇模型参数堆叠张量</span>
-            </div>
-            <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('W_{(k)}^{(l)}')"></span>
-              <span class="symbol-colon">：</span>
-              <span>按第<span v-html="katex.renderToString('k')"></span>模展开后的矩阵形式</span>
-            </div>
-            <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('U_k,\\Sigma_k,V_k')"></span>
-              <span class="symbol-colon">：</span>
-              <span><span v-html="katex.renderToString('W_{(k)}^{(l)}')"></span>的 SVD 分解结果</span>
-            </div>
-            <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('G_i^{(l)}')"></span>
-              <span class="symbol-colon">：</span>
-              <span>第<span v-html="katex.renderToString('i')"></span>簇在第<span v-html="katex.renderToString('l')"></span>层对应的子梯度切片</span>
+              <span>服务器针对客户端<span v-html="katex.renderToString('i')"></span>个性化后的共享层</span>
             </div>
             <div class="symbol-definition">
               <span class="symbol-label" v-html="katex.renderToString('|\\cdot|_*')"></span>
               <span class="symbol-colon">：</span>
               <span>矩阵核范数（trace norm）</span>
-            </div>
-            <div class="symbol-definition">
-              <span class="symbol-label" v-html="katex.renderToString('\\mathrm{slice}_i(\\cdot)')"></span>
-              <span class="symbol-colon">：</span>
-              <span>取张量在"簇"维度上第<span v-html="katex.renderToString('i')"></span>个索引对应切片</span>
             </div>
             <div class="symbol-definition">
               <span class="symbol-label" v-html="katex.renderToString('\\mathrm{stack}(\\cdot)')"></span>
@@ -240,6 +232,14 @@
           <a-descriptions-item label="所属簇" v-if="selectedNode.clusterId">
             簇 {{ selectedNode.clusterId }}
           </a-descriptions-item>
+          <a-descriptions-item label="客户端数量" v-if="selectedNode.clientCount">
+            {{ selectedNode.clientCount }} 个客户端
+          </a-descriptions-item>
+          <a-descriptions-item label="参与训练" v-if="selectedNode.type === 'client'">
+            <a-tag :color="selectedNode.participating ? 'green' : 'orange'">
+              {{ selectedNode.participating ? '是' : '否' }}
+            </a-tag>
+          </a-descriptions-item>
           <a-descriptions-item label="样本数量" v-if="selectedNode.sampleCount">
             {{ selectedNode.sampleCount }}
           </a-descriptions-item>
@@ -271,7 +271,8 @@ import * as echarts from 'echarts'
 import { 
   PlayCircleOutlined, 
   PauseCircleOutlined, 
-  ReloadOutlined 
+  ReloadOutlined,
+  ZoomInOutlined
 } from '@ant-design/icons-vue'
 
 const props = defineProps({
@@ -299,6 +300,7 @@ const nodeDrawerVisible = ref(false)
 const selectedNode = ref(null)
 const isReplaying = ref(false)
 const canReplay = ref(false)
+const lastUpdatedRound = ref(-1) // 记录上次更新客户端参与状态的轮次
 
 let chartInstance = null
 
@@ -321,18 +323,34 @@ const mockTopologyData = ref({
     { id: 'proxy_2', name: '簇代理 2', type: 'proxy', x: 400, y: 150, clusterId: 2, online: true },
     { id: 'proxy_3', name: '簇代理 3', type: 'proxy', x: 600, y: 150, clusterId: 3, online: true },
     
-    // L0 - Clients
-    { id: 'client_1_1', name: '客户端 1-1', type: 'client', x: 150, y: 280, clusterId: 1, online: true, sampleCount: 1000, currentLoss: 0.245 },
-    { id: 'client_1_2', name: '客户端 1-2', type: 'client', x: 200, y: 280, clusterId: 1, online: true, sampleCount: 800, currentLoss: 0.234 },
-    { id: 'client_1_3', name: '客户端 1-3', type: 'client', x: 250, y: 280, clusterId: 1, online: false, sampleCount: 1200, currentLoss: 0.267 },
+    // L1 - Client Clusters (虚拟节点，用于展示簇分组)
+    { id: 'cluster_1', name: '客户端簇 C₁', type: 'cluster', x: 200, y: 220, clusterId: 1, online: true, clientCount: 6 },
+    { id: 'cluster_2', name: '客户端簇 C₂', type: 'cluster', x: 400, y: 220, clusterId: 2, online: true, clientCount: 7 },
+    { id: 'cluster_3', name: '客户端簇 C₃', type: 'cluster', x: 600, y: 220, clusterId: 3, online: true, clientCount: 7 },
     
-    { id: 'client_2_1', name: '客户端 2-1', type: 'client', x: 350, y: 280, clusterId: 2, online: true, sampleCount: 900, currentLoss: 0.198 },
-    { id: 'client_2_2', name: '客户端 2-2', type: 'client', x: 400, y: 280, clusterId: 2, online: true, sampleCount: 1100, currentLoss: 0.212 },
-    { id: 'client_2_3', name: '客户端 2-3', type: 'client', x: 450, y: 280, clusterId: 2, online: true, sampleCount: 950, currentLoss: 0.203 },
+    // L0 - Clients (移除固定的participating值，由动态函数控制)
+    { id: 'client_1_1', name: '客户端 1-1', type: 'client', x: 120, y: 300, clusterId: 1, online: true, sampleCount: 1000, currentLoss: 0.245 },
+    { id: 'client_1_2', name: '客户端 1-2', type: 'client', x: 160, y: 300, clusterId: 1, online: true, sampleCount: 800, currentLoss: 0.234 },
+    { id: 'client_1_3', name: '客户端 1-3', type: 'client', x: 200, y: 300, clusterId: 1, online: false, sampleCount: 1200, currentLoss: 0.267 },
+    { id: 'client_1_4', name: '客户端 1-4', type: 'client', x: 240, y: 300, clusterId: 1, online: true, sampleCount: 950, currentLoss: 0.251 },
+    { id: 'client_1_5', name: '客户端 1-5', type: 'client', x: 280, y: 300, clusterId: 1, online: true, sampleCount: 1100, currentLoss: 0.239 },
+    { id: 'client_1_6', name: '客户端 1-6', type: 'client', x: 120, y: 340, clusterId: 1, online: true, sampleCount: 900, currentLoss: 0.256 },
     
-    { id: 'client_3_1', name: '客户端 3-1', type: 'client', x: 550, y: 280, clusterId: 3, online: true, sampleCount: 1050, currentLoss: 0.189 },
-    { id: 'client_3_2', name: '客户端 3-2', type: 'client', x: 600, y: 280, clusterId: 3, online: false, sampleCount: 800, currentLoss: 0.234 },
-    { id: 'client_3_3', name: '客户端 3-3', type: 'client', x: 650, y: 280, clusterId: 3, online: true, sampleCount: 1150, currentLoss: 0.176 },
+    { id: 'client_2_1', name: '客户端 2-1', type: 'client', x: 320, y: 300, clusterId: 2, online: true, sampleCount: 900, currentLoss: 0.198 },
+    { id: 'client_2_2', name: '客户端 2-2', type: 'client', x: 360, y: 300, clusterId: 2, online: true, sampleCount: 1100, currentLoss: 0.212 },
+    { id: 'client_2_3', name: '客户端 2-3', type: 'client', x: 400, y: 300, clusterId: 2, online: true, sampleCount: 950, currentLoss: 0.203 },
+    { id: 'client_2_4', name: '客户端 2-4', type: 'client', x: 440, y: 300, clusterId: 2, online: true, sampleCount: 1050, currentLoss: 0.189 },
+    { id: 'client_2_5', name: '客户端 2-5', type: 'client', x: 480, y: 300, clusterId: 2, online: false, sampleCount: 800, currentLoss: 0.234 },
+    { id: 'client_2_6', name: '客户端 2-6', type: 'client', x: 320, y: 340, clusterId: 2, online: true, sampleCount: 1200, currentLoss: 0.195 },
+    { id: 'client_2_7', name: '客户端 2-7', type: 'client', x: 360, y: 340, clusterId: 2, online: true, sampleCount: 980, currentLoss: 0.208 },
+    
+    { id: 'client_3_1', name: '客户端 3-1', type: 'client', x: 520, y: 300, clusterId: 3, online: true, sampleCount: 1050, currentLoss: 0.189 },
+    { id: 'client_3_2', name: '客户端 3-2', type: 'client', x: 560, y: 300, clusterId: 3, online: false, sampleCount: 800, currentLoss: 0.234 },
+    { id: 'client_3_3', name: '客户端 3-3', type: 'client', x: 600, y: 300, clusterId: 3, online: true, sampleCount: 1150, currentLoss: 0.176 },
+    { id: 'client_3_4', name: '客户端 3-4', type: 'client', x: 640, y: 300, clusterId: 3, online: true, sampleCount: 920, currentLoss: 0.201 },
+    { id: 'client_3_5', name: '客户端 3-5', type: 'client', x: 680, y: 300, clusterId: 3, online: true, sampleCount: 1080, currentLoss: 0.183 },
+    { id: 'client_3_6', name: '客户端 3-6', type: 'client', x: 520, y: 340, clusterId: 3, online: true, sampleCount: 1000, currentLoss: 0.192 },
+    { id: 'client_3_7', name: '客户端 3-7', type: 'client', x: 560, y: 340, clusterId: 3, online: true, sampleCount: 950, currentLoss: 0.186 },
   ],
   // 动态边连接：根据训练轮次决定连接方式
   edges: [],
@@ -344,65 +362,115 @@ const mockTopologyData = ref({
   ]
 })
 
+// 随机选择客户端参与训练
+const updateClientParticipation = () => {
+  const currentRound = props.currentRound
+  
+  // 使用轮次作为随机种子，确保相同轮次的结果一致
+  const seededRandom = (seed) => {
+    const x = Math.sin(seed) * 10000
+    return x - Math.floor(x)
+  }
+  
+  mockTopologyData.value.nodes.forEach(node => {
+    if (node.type === 'client' && node.online) {
+      // 为每个客户端在当前轮次生成唯一的种子
+      const seed = currentRound * 1000 + parseInt(node.id.split('_')[2])
+      const randomValue = seededRandom(seed)
+      
+      // 根据簇ID设置不同的参与率
+      let participationRate = 0.6 // 默认60%参与率
+      switch (node.clusterId) {
+        case 1:
+          participationRate = 0.5 // 簇1: 50%参与率
+          break
+        case 2:
+          participationRate = 0.7 // 簇2: 70%参与率
+          break
+        case 3:
+          participationRate = 0.6 // 簇3: 60%参与率
+          break
+      }
+      
+      // 第16轮后才开始随机选择，之前轮次保持全部参与
+      if (currentRound >= 16) {
+        node.participating = randomValue < participationRate
+      } else {
+        node.participating = true // 前期全部参与
+      }
+    } else if (!node.online) {
+      node.participating = false // 离线客户端不参与
+    }
+  })
+}
+
 // 生成动态连接边
 const generateEdges = () => {
   const edges = []
   
-  // Aggregator to Proxies (始终存在)
+  // L3 -> L2: Aggregator to Proxies (始终存在)
   edges.push(
     { source: 'aggregator', target: 'proxy_1', type: 'agg-proxy' },
     { source: 'aggregator', target: 'proxy_2', type: 'agg-proxy' },
     { source: 'aggregator', target: 'proxy_3', type: 'agg-proxy' }
   )
   
+  // L2 -> L1: Proxies to Client Clusters (始终存在)
+  edges.push(
+    { source: 'proxy_1', target: 'cluster_1', type: 'proxy-cluster' },
+    { source: 'proxy_2', target: 'cluster_2', type: 'proxy-cluster' },
+    { source: 'proxy_3', target: 'cluster_3', type: 'proxy-cluster' }
+  )
+  
   // 获取客户端节点
   const clients = mockTopologyData.value.nodes.filter(n => n.type === 'client')
-  const proxies = mockTopologyData.value.nodes.filter(n => n.type === 'proxy')
+  const clusters = mockTopologyData.value.nodes.filter(n => n.type === 'cluster')
   
   // 根据训练轮次决定连接方式
   const currentRound = props.currentRound
   
   if (currentRound <= 5) {
-    // 前5轮：全连接状态，每个客户端连接到所有簇代理
+    // L1 -> L0: 前5轮：全连接状态，每个客户端连接到所有簇
     clients.forEach(client => {
-      proxies.forEach(proxy => {
+      clusters.forEach(cluster => {
         edges.push({
-          source: proxy.id,
+          source: cluster.id,
           target: client.id,
-          type: 'proxy-client-full',
+          type: 'cluster-client-full',
           strength: 1.0
         })
       })
     })
   } else if (currentRound <= 15) {
-    // 第6-15轮：逐渐减少连接，聚类过程
+    // L1 -> L0: 第6-15轮：逐渐减少连接，聚类过程
     const clusteringProgress = (currentRound - 5) / 10  // 0 到 1
     
     clients.forEach(client => {
-      proxies.forEach(proxy => {
-        const isTargetCluster = proxy.clusterId === client.clusterId
+      clusters.forEach(cluster => {
+        const isTargetCluster = cluster.clusterId === client.clusterId
         const shouldConnect = isTargetCluster || Math.random() > clusteringProgress * 0.8
         
         if (shouldConnect) {
           edges.push({
-            source: proxy.id,
+            source: cluster.id,
             target: client.id,
-            type: isTargetCluster ? 'proxy-client-target' : 'proxy-client-fading',
+            type: isTargetCluster ? 'cluster-client-target' : 'cluster-client-fading',
             strength: isTargetCluster ? 1.0 : Math.max(0.1, 1.0 - clusteringProgress)
           })
         }
       })
     })
   } else {
-    // 第16轮之后：只保留最终簇分配连接
+    // L1 -> L0: 第16轮之后：只保留最终簇分配连接，并突出显示参与训练的客户端
     clients.forEach(client => {
-      const targetProxy = proxies.find(p => p.clusterId === client.clusterId)
-      if (targetProxy) {
+      const targetCluster = clusters.find(c => c.clusterId === client.clusterId)
+      if (targetCluster) {
+        const edgeType = client.participating ? 'cluster-client-active' : 'cluster-client-inactive'
         edges.push({
-          source: targetProxy.id,
+          source: targetCluster.id,
           target: client.id,
-          type: 'proxy-client-final',
-          strength: 1.0
+          type: edgeType,
+          strength: client.participating ? 1.0 : 0.3
         })
       }
     })
@@ -414,15 +482,57 @@ const generateEdges = () => {
 // 添加日志数据
 const generateNodeLogs = (nodeId) => {
   const logs = []
+  const node = mockTopologyData.value.nodes.find(n => n.id === nodeId)
+  
   for (let i = 0; i < 5; i++) {
-    logs.push({
-      id: `log_${nodeId}_${i}`,
-      time: new Date(Date.now() - i * 60000).toLocaleTimeString(),
-      message: `轮次 ${props.currentRound - i}: 模型训练完成，损失：0.${Math.floor(Math.random() * 300 + 150)}`,
-      level: Math.random() > 0.8 ? 'warning' : 'info'
-    })
+    const round = props.currentRound - i
+    if (round >= 0) {
+      let message = ''
+      
+      if (node?.type === 'client') {
+        // 为客户端生成参与状态相关的日志
+        const wasParticipating = round >= 16 ? checkClientParticipationAtRound(nodeId, round) : true
+        if (wasParticipating) {
+          message = `轮次 ${round}: 参与训练，模型上传完成，损失：0.${Math.floor(Math.random() * 300 + 150)}`
+        } else {
+          message = `轮次 ${round}: 未被选中参与训练，等待下轮选择`
+        }
+      } else {
+        message = `轮次 ${round}: 模型聚合完成，损失：0.${Math.floor(Math.random() * 300 + 150)}`
+      }
+      
+      logs.push({
+        id: `log_${nodeId}_${i}`,
+        time: new Date(Date.now() - i * 60000).toLocaleTimeString(),
+        message: message,
+        level: Math.random() > 0.8 ? 'warning' : 'info'
+      })
+    }
   }
   return logs
+}
+
+// 检查特定轮次的客户端参与状态
+const checkClientParticipationAtRound = (clientId, round) => {
+  const seededRandom = (seed) => {
+    const x = Math.sin(seed) * 10000
+    return x - Math.floor(x)
+  }
+  
+  const node = mockTopologyData.value.nodes.find(n => n.id === clientId)
+  if (!node || !node.online) return false
+  
+  const seed = round * 1000 + parseInt(clientId.split('_')[2])
+  const randomValue = seededRandom(seed)
+  
+  let participationRate = 0.6
+  switch (node.clusterId) {
+    case 1: participationRate = 0.5; break
+    case 2: participationRate = 0.7; break
+    case 3: participationRate = 0.6; break
+  }
+  
+  return round >= 16 ? randomValue < participationRate : true
 }
 
 // 初始化图表
@@ -494,10 +604,15 @@ const getChartOption = () => {
   
   return {
     title: {
-      text: `分簇联邦学习拓扑 - 轮次 ${props.currentRound}`,
+      text: `分簇联邦学习拓扑 (四层架构) - 轮次 ${props.currentRound}`,
+      subtext: `参与训练客户端: ${getParticipatingClientsCount()}/${getTotalOnlineClientsCount()}`,
       left: 'center',
       textStyle: {
         fontSize: 14
+      },
+      subtextStyle: {
+        fontSize: 12,
+        color: '#666'
       }
     },
     animationDurationUpdate: 1500,
@@ -532,39 +647,52 @@ const getChartOption = () => {
 const getEdgeColorByType = (edge) => {
   switch (edge.type) {
     case 'agg-proxy':
-      // 聚合器到代理：使用代理的簇颜色
-      const targetProxy = mockTopologyData.value.nodes.find(n => n.id === edge.target)
-      if (targetProxy?.clusterId) {
-        const cluster = mockTopologyData.value.clusters.find(c => c.id === targetProxy.clusterId)
-        return cluster ? cluster.color : '#1890ff'
-      }
+      // L3->L2: 聚合器到代理，使用紫色
       return '#722ed1'
       
-    case 'proxy-client-full':
-      // 全连接阶段：较淡的灰色
+    case 'proxy-cluster':
+      // L2->L1: 代理到客户端簇，使用簇颜色
+      const targetCluster = mockTopologyData.value.nodes.find(n => n.id === edge.target)
+      if (targetCluster?.clusterId) {
+        const cluster = mockTopologyData.value.clusters.find(c => c.id === targetCluster.clusterId)
+        return cluster ? cluster.color : '#1890ff'
+      }
+      return '#1890ff'
+      
+    case 'cluster-client-full':
+      // L1->L0: 全连接阶段，较淡的灰色
       return '#bfbfbf'
       
-    case 'proxy-client-target':
-      // 目标簇连接：使用簇颜色
-      const sourceProxy = mockTopologyData.value.nodes.find(n => n.id === edge.source)
-      if (sourceProxy?.clusterId) {
-        const cluster = mockTopologyData.value.clusters.find(c => c.id === sourceProxy.clusterId)
+    case 'cluster-client-target':
+      // L1->L0: 目标簇连接，使用簇颜色
+      const sourceCluster = mockTopologyData.value.nodes.find(n => n.id === edge.source)
+      if (sourceCluster?.clusterId) {
+        const cluster = mockTopologyData.value.clusters.find(c => c.id === sourceCluster.clusterId)
         return cluster ? cluster.color : '#1890ff'
       }
       return '#1890ff'
       
-    case 'proxy-client-fading':
-      // 正在消失的连接：红色
+    case 'cluster-client-fading':
+      // L1->L0: 正在消失的连接，红色
       return '#ff7875'
       
-    case 'proxy-client-final':
-      // 最终簇连接：鲜艳的簇颜色
-      const finalProxy = mockTopologyData.value.nodes.find(n => n.id === edge.source)
-      if (finalProxy?.clusterId) {
-        const cluster = mockTopologyData.value.clusters.find(c => c.id === finalProxy.clusterId)
+    case 'cluster-client-active':
+      // L1->L0: 参与训练的客户端连接，鲜艳的簇颜色
+      const activeCluster = mockTopologyData.value.nodes.find(n => n.id === edge.source)
+      if (activeCluster?.clusterId) {
+        const cluster = mockTopologyData.value.clusters.find(c => c.id === activeCluster.clusterId)
         return cluster ? cluster.color : '#1890ff'
       }
       return '#1890ff'
+      
+    case 'cluster-client-inactive':
+      // L1->L0: 未参与训练的客户端连接，较淡的簇颜色
+      const inactiveCluster = mockTopologyData.value.nodes.find(n => n.id === edge.source)
+      if (inactiveCluster?.clusterId) {
+        const cluster = mockTopologyData.value.clusters.find(c => c.id === inactiveCluster.clusterId)
+        return cluster ? cluster.color + '80' : '#1890ff80'  // 添加透明度
+      }
+      return '#1890ff80'
       
     default:
       return '#999'
@@ -575,15 +703,19 @@ const getEdgeColorByType = (edge) => {
 const getEdgeWidthByType = (edge) => {
   switch (edge.type) {
     case 'agg-proxy':
-      return 3  // 聚合器连接较粗
-    case 'proxy-client-full':
-      return 1  // 全连接时较细
-    case 'proxy-client-target':
-      return 2  // 目标连接中等
-    case 'proxy-client-fading':
-      return 1  // 消失连接较细
-    case 'proxy-client-final':
-      return 3  // 最终连接较粗
+      return 3  // L3->L2: 聚合器连接较粗
+    case 'proxy-cluster':
+      return 2  // L2->L1: 代理到簇连接中等
+    case 'cluster-client-full':
+      return 1  // L1->L0: 全连接时较细
+    case 'cluster-client-target':
+      return 2  // L1->L0: 目标连接中等
+    case 'cluster-client-fading':
+      return 1  // L1->L0: 消失连接较细
+    case 'cluster-client-active':
+      return 3  // L1->L0: 参与训练连接较粗
+    case 'cluster-client-inactive':
+      return 1  // L1->L0: 未参与训练连接较细
     default:
       return 2
   }
@@ -593,15 +725,19 @@ const getEdgeWidthByType = (edge) => {
 const getEdgeOpacityByType = (edge) => {
   switch (edge.type) {
     case 'agg-proxy':
-      return 1.0  // 聚合器连接完全不透明
-    case 'proxy-client-full':
-      return 0.3  // 全连接时很透明
-    case 'proxy-client-target':
-      return 0.8  // 目标连接较不透明
-    case 'proxy-client-fading':
-      return Math.max(0.1, edge.strength || 0.5)  // 根据强度动态变化
-    case 'proxy-client-final':
-      return 1.0  // 最终连接完全不透明
+      return 1.0  // L3->L2: 聚合器连接完全不透明
+    case 'proxy-cluster':
+      return 1.0  // L2->L1: 代理到簇连接完全不透明
+    case 'cluster-client-full':
+      return 0.3  // L1->L0: 全连接时很透明
+    case 'cluster-client-target':
+      return 0.8  // L1->L0: 目标连接较不透明
+    case 'cluster-client-fading':
+      return Math.max(0.1, edge.strength || 0.5)  // L1->L0: 根据强度动态变化
+    case 'cluster-client-active':
+      return 1.0  // L1->L0: 参与训练连接完全不透明
+    case 'cluster-client-inactive':
+      return 0.3  // L1->L0: 未参与训练连接很透明
     default:
       return 0.6
   }
@@ -612,6 +748,7 @@ const getNodeSize = (type) => {
   switch (type) {
     case 'aggregator': return 40
     case 'proxy': return 30
+    case 'cluster': return 25
     case 'client': return 20
     default: return 15
   }
@@ -624,10 +761,30 @@ const getNodeColor = (node) => {
     const cluster = mockTopologyData.value.clusters.find(c => c.id === node.clusterId)
     return cluster ? cluster.color : '#1890ff'
   }
+  if (node.type === 'cluster') {
+    const cluster = mockTopologyData.value.clusters.find(c => c.id === node.clusterId)
+    return cluster ? cluster.color + '40' : '#1890ff40'  // 半透明显示
+  }
   if (node.type === 'client') {
-    return node.online ? '#52c41a' : '#ff4d4f'
+    if (!node.online) return '#ff4d4f'  // 离线：红色
+    if (node.participating) return '#52c41a'  // 参与训练：绿色
+    return '#d9d9d9'  // 在线但未参与：灰色
   }
   return '#1890ff'
+}
+
+// 获取参与训练的客户端数量
+const getParticipatingClientsCount = () => {
+  return mockTopologyData.value.nodes.filter(n => 
+    n.type === 'client' && n.online && n.participating
+  ).length
+}
+
+// 获取在线客户端总数
+const getTotalOnlineClientsCount = () => {
+  return mockTopologyData.value.nodes.filter(n => 
+    n.type === 'client' && n.online
+  ).length
 }
 
 // 节点类型标签
@@ -635,6 +792,7 @@ const getNodeTypeLabel = (type) => {
   switch (type) {
     case 'aggregator': return 'FedSAK聚合器 (L3)'
     case 'proxy': return '簇代理 (L2)'
+    case 'cluster': return '客户端簇 (L1)'
     case 'client': return '客户端 (L0)'
     default: return '未知'
   }
@@ -669,7 +827,13 @@ const updateChart = () => {
 }
 
 // 监听数据变化
-watch(() => props.currentRound, () => {
+watch(() => props.currentRound, (newRound, oldRound) => {
+  // 只有当轮次实际发生变化时才更新客户端参与状态
+  if (newRound !== lastUpdatedRound.value) {
+    console.log(`轮次变化: ${oldRound} -> ${newRound}, 重新选择参与客户端`)
+    lastUpdatedRound.value = newRound
+    updateClientParticipation()
+  }
   updateChart()
 })
 
@@ -679,6 +843,9 @@ watch(() => props.experimentData, () => {
 
 onMounted(async () => {
   await nextTick()
+  // 初始化时设置客户端参与状态
+  lastUpdatedRound.value = props.currentRound
+  updateClientParticipation()
   initChart()
 })
 </script>
@@ -736,8 +903,17 @@ onMounted(async () => {
   background-color: #1890ff;
 }
 
-.legend-color.client-online {
+.legend-color.cluster {
+  background-color: #1890ff;
+  opacity: 0.4;
+}
+
+.legend-color.client-participating {
   background-color: #52c41a;
+}
+
+.legend-color.client-online {
+  background-color: #d9d9d9;
 }
 
 .legend-color.client-offline {
@@ -754,15 +930,20 @@ onMounted(async () => {
   height: 3px;
 }
 
+.legend-line.proxy-cluster {
+  background-color: #1890ff;
+  height: 2px;
+}
+
+.legend-line.cluster-client-active {
+  background-color: #52c41a;
+  height: 3px;
+}
+
 .legend-line.full-connect {
   background-color: #bfbfbf;
   opacity: 0.3;
   height: 1px;
-}
-
-.legend-line.cluster-connect {
-  background-color: #1890ff;
-  height: 2px;
 }
 
 .legend-line.fading-connect {
