@@ -329,28 +329,31 @@ const mockTopologyData = ref({
     { id: 'cluster_3', name: '客户端簇 C₃', type: 'cluster', x: 600, y: 220, clusterId: 3, online: true, clientCount: 7 },
     
     // L0 - Clients (移除固定的participating值，由动态函数控制)
-    { id: 'client_1_1', name: '客户端 1-1', type: 'client', x: 120, y: 300, clusterId: 1, online: true, sampleCount: 1000, currentLoss: 0.245 },
-    { id: 'client_1_2', name: '客户端 1-2', type: 'client', x: 160, y: 300, clusterId: 1, online: true, sampleCount: 800, currentLoss: 0.234 },
-    { id: 'client_1_3', name: '客户端 1-3', type: 'client', x: 200, y: 300, clusterId: 1, online: false, sampleCount: 1200, currentLoss: 0.267 },
-    { id: 'client_1_4', name: '客户端 1-4', type: 'client', x: 240, y: 300, clusterId: 1, online: true, sampleCount: 950, currentLoss: 0.251 },
-    { id: 'client_1_5', name: '客户端 1-5', type: 'client', x: 280, y: 300, clusterId: 1, online: true, sampleCount: 1100, currentLoss: 0.239 },
-    { id: 'client_1_6', name: '客户端 1-6', type: 'client', x: 120, y: 340, clusterId: 1, online: true, sampleCount: 900, currentLoss: 0.256 },
+    // 簇1客户端，每行3个，中间客户端与cluster_1 (x: 200) 对齐
+    { id: 'client_1_1', name: '客户端 1-1', type: 'client', x: 140, y: 300, clusterId: 1, online: true, sampleCount: 1000, currentLoss: 0.245 },
+    { id: 'client_1_2', name: '客户端 1-2', type: 'client', x: 200, y: 300, clusterId: 1, online: true, sampleCount: 800, currentLoss: 0.234 },
+    { id: 'client_1_3', name: '客户端 1-3', type: 'client', x: 260, y: 300, clusterId: 1, online: false, sampleCount: 1200, currentLoss: 0.267 },
+    { id: 'client_1_4', name: '客户端 1-4', type: 'client', x: 140, y: 340, clusterId: 1, online: true, sampleCount: 950, currentLoss: 0.251 },
+    { id: 'client_1_5', name: '客户端 1-5', type: 'client', x: 200, y: 340, clusterId: 1, online: true, sampleCount: 1100, currentLoss: 0.239 },
+    { id: 'client_1_6', name: '客户端 1-6', type: 'client', x: 260, y: 340, clusterId: 1, online: true, sampleCount: 900, currentLoss: 0.256 },
     
-    { id: 'client_2_1', name: '客户端 2-1', type: 'client', x: 320, y: 300, clusterId: 2, online: true, sampleCount: 900, currentLoss: 0.198 },
-    { id: 'client_2_2', name: '客户端 2-2', type: 'client', x: 360, y: 300, clusterId: 2, online: true, sampleCount: 1100, currentLoss: 0.212 },
-    { id: 'client_2_3', name: '客户端 2-3', type: 'client', x: 400, y: 300, clusterId: 2, online: true, sampleCount: 950, currentLoss: 0.203 },
-    { id: 'client_2_4', name: '客户端 2-4', type: 'client', x: 440, y: 300, clusterId: 2, online: true, sampleCount: 1050, currentLoss: 0.189 },
-    { id: 'client_2_5', name: '客户端 2-5', type: 'client', x: 480, y: 300, clusterId: 2, online: false, sampleCount: 800, currentLoss: 0.234 },
-    { id: 'client_2_6', name: '客户端 2-6', type: 'client', x: 320, y: 340, clusterId: 2, online: true, sampleCount: 1200, currentLoss: 0.195 },
-    { id: 'client_2_7', name: '客户端 2-7', type: 'client', x: 360, y: 340, clusterId: 2, online: true, sampleCount: 980, currentLoss: 0.208 },
+    // 簇2客户端，每行3个，中间客户端与cluster_2 (x: 400) 对齐
+    { id: 'client_2_1', name: '客户端 2-1', type: 'client', x: 340, y: 300, clusterId: 2, online: true, sampleCount: 900, currentLoss: 0.198 },
+    { id: 'client_2_2', name: '客户端 2-2', type: 'client', x: 400, y: 300, clusterId: 2, online: true, sampleCount: 1100, currentLoss: 0.212 },
+    { id: 'client_2_3', name: '客户端 2-3', type: 'client', x: 460, y: 300, clusterId: 2, online: true, sampleCount: 950, currentLoss: 0.203 },
+    { id: 'client_2_4', name: '客户端 2-4', type: 'client', x: 340, y: 340, clusterId: 2, online: true, sampleCount: 1050, currentLoss: 0.189 },
+    { id: 'client_2_5', name: '客户端 2-5', type: 'client', x: 400, y: 340, clusterId: 2, online: false, sampleCount: 800, currentLoss: 0.234 },
+    { id: 'client_2_6', name: '客户端 2-6', type: 'client', x: 460, y: 340, clusterId: 2, online: true, sampleCount: 1200, currentLoss: 0.195 },
+    { id: 'client_2_7', name: '客户端 2-7', type: 'client', x: 340, y: 380, clusterId: 2, online: true, sampleCount: 980, currentLoss: 0.208 },
     
-    { id: 'client_3_1', name: '客户端 3-1', type: 'client', x: 520, y: 300, clusterId: 3, online: true, sampleCount: 1050, currentLoss: 0.189 },
-    { id: 'client_3_2', name: '客户端 3-2', type: 'client', x: 560, y: 300, clusterId: 3, online: false, sampleCount: 800, currentLoss: 0.234 },
-    { id: 'client_3_3', name: '客户端 3-3', type: 'client', x: 600, y: 300, clusterId: 3, online: true, sampleCount: 1150, currentLoss: 0.176 },
-    { id: 'client_3_4', name: '客户端 3-4', type: 'client', x: 640, y: 300, clusterId: 3, online: true, sampleCount: 920, currentLoss: 0.201 },
-    { id: 'client_3_5', name: '客户端 3-5', type: 'client', x: 680, y: 300, clusterId: 3, online: true, sampleCount: 1080, currentLoss: 0.183 },
-    { id: 'client_3_6', name: '客户端 3-6', type: 'client', x: 520, y: 340, clusterId: 3, online: true, sampleCount: 1000, currentLoss: 0.192 },
-    { id: 'client_3_7', name: '客户端 3-7', type: 'client', x: 560, y: 340, clusterId: 3, online: true, sampleCount: 950, currentLoss: 0.186 },
+    // 簇3客户端，每行3个，中间客户端与cluster_3 (x: 600) 对齐
+    { id: 'client_3_1', name: '客户端 3-1', type: 'client', x: 540, y: 300, clusterId: 3, online: true, sampleCount: 1050, currentLoss: 0.189 },
+    { id: 'client_3_2', name: '客户端 3-2', type: 'client', x: 600, y: 300, clusterId: 3, online: false, sampleCount: 800, currentLoss: 0.234 },
+    { id: 'client_3_3', name: '客户端 3-3', type: 'client', x: 660, y: 300, clusterId: 3, online: true, sampleCount: 1150, currentLoss: 0.176 },
+    { id: 'client_3_4', name: '客户端 3-4', type: 'client', x: 540, y: 340, clusterId: 3, online: true, sampleCount: 920, currentLoss: 0.201 },
+    { id: 'client_3_5', name: '客户端 3-5', type: 'client', x: 600, y: 340, clusterId: 3, online: true, sampleCount: 1080, currentLoss: 0.183 },
+    { id: 'client_3_6', name: '客户端 3-6', type: 'client', x: 660, y: 340, clusterId: 3, online: true, sampleCount: 1000, currentLoss: 0.192 },
+    { id: 'client_3_7', name: '客户端 3-7', type: 'client', x: 540, y: 380, clusterId: 3, online: true, sampleCount: 950, currentLoss: 0.186 },
   ],
   // 动态边连接：根据训练轮次决定连接方式
   edges: [],
@@ -763,7 +766,8 @@ const getNodeColor = (node) => {
   }
   if (node.type === 'cluster') {
     const cluster = mockTopologyData.value.clusters.find(c => c.id === node.clusterId)
-    return cluster ? cluster.color + '40' : '#1890ff40'  // 半透明显示
+    return cluster ? cluster.color + '95' : '#1890ff95'  // 半透明显示
+    // return cluster ? cluster.color : '#1890ff'  // 使用簇颜色
   }
   if (node.type === 'client') {
     if (!node.online) return '#ff4d4f'  // 离线：红色
