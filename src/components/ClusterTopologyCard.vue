@@ -391,9 +391,9 @@ const updateClientParticipation = () => {
           participationRate = 0.6 // 簇3: 60%参与率
           break
       }
-      
-      // 第16轮后才开始随机选择，之前轮次保持全部参与
-      if (currentRound >= 16) {
+
+      // 第5轮后才开始随机选择，之前轮次保持全部参与
+      if (currentRound >= 5) {
         node.participating = randomValue < participationRate
       } else {
         node.participating = true // 前期全部参与
@@ -429,8 +429,8 @@ const generateEdges = () => {
   // 根据训练轮次决定连接方式
   const currentRound = props.currentRound
   
-  if (currentRound <= 5) {
-    // L1 -> L0: 前5轮：全连接状态，每个客户端连接到所有簇
+  if (currentRound <= 2) {
+    // L1 -> L0: 前2轮：全连接状态，每个客户端连接到所有簇
     clients.forEach(client => {
       clusters.forEach(cluster => {
         edges.push({
@@ -441,10 +441,10 @@ const generateEdges = () => {
         })
       })
     })
-  } else if (currentRound <= 15) {
-    // L1 -> L0: 第6-15轮：逐渐减少连接，聚类过程
-    const clusteringProgress = (currentRound - 5) / 10  // 0 到 1
-    
+  } else if (currentRound <= 5) {
+    // L1 -> L0: 第3-5轮：逐渐减少连接，聚类过程
+    const clusteringProgress = (currentRound - 2) / 3  // 0 到 1
+
     clients.forEach(client => {
       clusters.forEach(cluster => {
         const isTargetCluster = cluster.clusterId === client.clusterId
@@ -461,7 +461,7 @@ const generateEdges = () => {
       })
     })
   } else {
-    // L1 -> L0: 第16轮之后：只保留最终簇分配连接，并突出显示参与训练的客户端
+    // L1 -> L0: 第6轮之后：只保留最终簇分配连接，并突出显示参与训练的客户端
     clients.forEach(client => {
       const targetCluster = clusters.find(c => c.clusterId === client.clusterId)
       if (targetCluster) {
