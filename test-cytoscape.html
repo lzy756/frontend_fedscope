@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cytoscape.js 拓扑图测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1890ff;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        
+        button.active {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        #cy {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f0f2f5 0%, #ffffff 100%);
+        }
+        
+        .info-panel {
+            margin-top: 20px;
+            padding: 16px;
+            background: #fafafa;
+            border-radius: 6px;
+            border-left: 4px solid #1890ff;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+            padding: 16px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 分簇联邦学习拓扑图 (Cytoscape.js)</h1>
+        
+        <div class="controls">
+            <button onclick="changeLayout('concentric')" class="active" id="btn-concentric">同心圆布局</button>
+            <button onclick="changeLayout('dagre')" id="btn-dagre">层次布局</button>
+            <button onclick="changeLayout('grid')" id="btn-grid">网格布局</button>
+            <button onclick="changeLayout('cola')" id="btn-cola">Cola布局</button>
+            <button onclick="startAnimation()">开始训练动画</button>
+            <button onclick="stopAnimation()">停止动画</button>
+            <button onclick="resetView()">重置视图</button>
+            <button onclick="fitView()">适应视图</button>
+        </div>
+        
+        <div id="cy"></div>
+        
+        <div class="info-panel">
+            <h3>🔧 当前状态</h3>
+            <div id="status">
+                <strong>训练轮次:</strong> <span id="round">1</span> | 
+                <strong>参与客户端:</strong> <span id="active-clients">15</span> | 
+                <strong>布局类型:</strong> <span id="layout-type">concentric</span>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #722ed1; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); border-radius: 0;"></div>
+                <span>FedSAK聚合器 (L3)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #1890ff; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); border-radius: 0;"></div>
+                <span>簇代理 (L2)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #1890ff; opacity: 0.3; border-style: dashed;"></div>
+                <span>客户端簇 (L1)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #52c41a;"></div>
+                <span>参与训练客户端</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #d9d9d9;"></div>
+                <span>在线客户端</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff4d4f;"></div>
+                <span>离线客户端</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/cytoscape@3.32.1/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+    <script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"></script>
+    <script>
+        let cy;
+        let animationTimer;
+        let currentRound = 1;
+
+        // 生成四层架构数据
+        function generateTopologyData() {
+            const nodes = [];
+            const edges = [];
+            
+            // L3 - FedSAK Aggregator
+            nodes.push({
+                data: {
+                    id: 'aggregator',
+                    label: 'FedSAK\n聚合器',
+                    layer: 'L3',
+                    type: 'aggregator'
+                }
+            });
+            
+            // L2 - Cluster Proxies & L1 - Cluster Groups
+            for (let i = 1; i <= 3; i++) {
+                // L2 代理
+                nodes.push({
+                    data: {
+                        id: `proxy_${i}`,
+                        label: `簇代理 ${i}`,
+                        layer: 'L2',
+                        type: 'proxy',
+                        clusterId: i,
+                        parent: `cluster_group_${i}`
+                    }
+                });
+                
+                // L1 簇组
+                nodes.push({
+                    data: {
+                        id: `cluster_group_${i}`,
+                        label: `客户端簇 C${i}`,
+                        layer: 'L1',
+                        type: 'cluster',
+                        clusterId: i
+                    }
+                });
+                
+                // L3 -> L2 连接
+                edges.push({
+                    data: {
+                        id: `agg_to_proxy_${i}`,
+                        source: 'aggregator',
+                        target: `proxy_${i}`,
+                        type: 'agg-proxy'
+                    }
+                });
+            }
+            
+            // L0 - Clients
+            const clientsPerCluster = [6, 7, 7];
+            for (let clusterId = 1; clusterId <= 3; clusterId++) {
+                const numClients = clientsPerCluster[clusterId - 1];
+                
+                for (let j = 1; j <= numClients; j++) {
+                    const clientId = `client_${clusterId}_${j}`;
+                    const isOnline = Math.random() > 0.1;
+                    const isParticipating = isOnline && Math.random() > 0.3;
+                    
+                    nodes.push({
+                        data: {
+                            id: clientId,
+                            label: `C${clusterId}-${j}`,
+                            layer: 'L0',
+                            type: 'client',
+                            clusterId: clusterId,
+                            parent: `cluster_group_${clusterId}`,
+                            online: isOnline,
+                            participating: isParticipating
+                        }
+                    });
+                    
+                    // L2 -> L0 连接
+                    if (isOnline) {
+                        edges.push({
+                            data: {
+                                id: `proxy_to_client_${clientId}`,
+                                source: `proxy_${clusterId}`,
+                                target: clientId,
+                                type: isParticipating ? 'cluster-client-active' : 'cluster-client-inactive'
+                            }
+                        });
+                    }
+                }
+            }
+            
+            return { nodes, edges };
+        }
+
+        // 获取样式配置
+        function getCytoscapeStyle() {
+            return [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'color': '#fff',
+                        'font-size': '10px',
+                        'font-weight': 'bold',
+                        'text-outline-width': 2,
+                        'text-outline-color': '#000',
+                        'text-wrap': 'wrap',
+                        'text-max-width': '80px'
+                    }
+                },
+                {
+                    selector: 'node[layer="L3"]',
+                    style: {
+                        'background-color': '#722ed1',
+                        'shape': 'hexagon',
+                        'width': 60,
+                        'height': 60,
+                        'border-width': 4,
+                        'border-color': '#531dab'
+                    }
+                },
+                {
+                    selector: 'node[layer="L2"]',
+                    style: {
+                        'background-color': (ele) => {
+                            const clusterId = ele.data('clusterId');
+                            const colors = ['#1890ff', '#52c41a', '#fa8c16'];
+                            return colors[clusterId - 1] || '#1890ff';
+                        },
+                        'shape': 'diamond',
+                        'width': 45,
+                        'height': 45,
+                        'border-width': 3,
+                        'border-color': '#fff'
+                    }
+                },
+                {
+                    selector: 'node[layer="L1"]',
+                    style: {
+                        'background-color': (ele) => {
+                            const clusterId = ele.data('clusterId');
+                            const colors = ['#1890ff', '#52c41a', '#fa8c16'];
+                            return (colors[clusterId - 1] || '#1890ff') + '20';
+                        },
+                        'border-width': 2,
+                        'border-style': 'dashed',
+                        'border-color': (ele) => {
+                            const clusterId = ele.data('clusterId');
+                            const colors = ['#1890ff', '#52c41a', '#fa8c16'];
+                            return colors[clusterId - 1] || '#1890ff';
+                        },
+                        'padding': '30px',
+                        'shape': 'round-rectangle',
+                        'text-valign': 'top',
+                        'text-margin-y': '-15px'
+                    }
+                },
+                {
+                    selector: 'node[layer="L0"]',
+                    style: {
+                        'background-color': (ele) => {
+                            const online = ele.data('online');
+                            const participating = ele.data('participating');
+                            if (!online) return '#ff4d4f';
+                            if (participating) return '#52c41a';
+                            return '#d9d9d9';
+                        },
+                        'shape': 'ellipse',
+                        'width': 28,
+                        'height': 28,
+                        'border-width': 2,
+                        'border-color': '#fff',
+                        'font-size': '8px'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'line-color': '#95a5a6',
+                        'target-arrow-shape': 'triangle',
+                        'target-arrow-color': '#95a5a6',
+                        'width': 2,
+                        'curve-style': 'bezier'
+                    }
+                },
+                {
+                    selector: 'edge[type="agg-proxy"]',
+                    style: {
+                        'line-color': '#722ed1',
+                        'target-arrow-color': '#722ed1',
+                        'width': 4
+                    }
+                },
+                {
+                    selector: 'edge[type="cluster-client-active"]',
+                    style: {
+                        'line-color': '#52c41a',
+                        'target-arrow-color': '#52c41a',
+                        'width': 3
+                    }
+                },
+                {
+                    selector: 'edge[type="cluster-client-inactive"]',
+                    style: {
+                        'line-color': '#d9d9d9',
+                        'target-arrow-color': '#d9d9d9',
+                        'width': 1,
+                        'opacity': 0.4
+                    }
+                }
+            ];
+        }
+
+        // 获取布局配置
+        function getLayoutConfig(type = 'concentric') {
+            const layouts = {
+                concentric: {
+                    name: 'concentric',
+                    concentric: (node) => {
+                        const layer = node.data('layer');
+                        return layer === 'L3' ? 4 : layer === 'L2' ? 3 : layer === 'L1' ? 2 : 1;
+                    },
+                    levelWidth: () => 1,
+                    minNodeSpacing: 80,
+                    animate: true,
+                    animationDuration: 1000,
+                    fit: true,
+                    padding: 50
+                },
+                dagre: {
+                    name: 'dagre',
+                    rankDir: 'TB',
+                    nodeSep: 50,
+                    edgeSep: 10,
+                    rankSep: 100,
+                    animate: true,
+                    animationDuration: 1000,
+                    fit: true,
+                    padding: 50
+                },
+                grid: {
+                    name: 'grid',
+                    rows: 4,
+                    cols: 6,
+                    animate: true,
+                    animationDuration: 1000,
+                    fit: true,
+                    padding: 50
+                },
+                cola: {
+                    name: 'cola',
+                    animate: true,
+                    randomize: false,
+                    maxSimulationTime: 1500,
+                    fit: true,
+                    padding: 50,
+                    nodeSpacing: (node) => 80,
+                    edgeLength: 100
+                }
+            };
+            
+            return layouts[type] || layouts.concentric;
+        }
+
+        // 初始化 Cytoscape
+        function initCytoscape() {
+            const { nodes, edges } = generateTopologyData();
+            
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                elements: [...nodes, ...edges],
+                style: getCytoscapeStyle(),
+                layout: getLayoutConfig('concentric'),
+                minZoom: 0.3,
+                maxZoom: 3,
+                wheelSensitivity: 0.3
+            });
+
+            // 添加事件监听
+            cy.on('tap', 'node', (evt) => {
+                const node = evt.target;
+                const nodeData = node.data();
+                console.log('点击节点:', nodeData);
+                
+                // 高亮选中的节点
+                cy.elements().removeClass('highlighted');
+                node.addClass('highlighted');
+                
+                // 高亮相邻边和节点
+                node.neighborhood().addClass('highlighted');
+            });
+
+            updateStatus();
+        }
+
+        // 更新状态显示
+        function updateStatus() {
+            document.getElementById('round').textContent = currentRound;
+            const activeCount = cy ? cy.nodes('[layer="L0"][participating="true"]').length : 0;
+            document.getElementById('active-clients').textContent = activeCount;
+        }
+
+        // 改变布局
+        function changeLayout(type) {
+            if (!cy) return;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`btn-${type}`).classList.add('active');
+            
+            cy.layout(getLayoutConfig(type)).run();
+            document.getElementById('layout-type').textContent = type;
+        }
+
+        // 开始训练动画
+        function startAnimation() {
+            if (animationTimer) clearInterval(animationTimer);
+            
+            animationTimer = setInterval(() => {
+                simulateTrainingRound();
+                currentRound++;
+                updateStatus();
+            }, 3000);
+        }
+
+        // 停止动画
+        function stopAnimation() {
+            if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+        }
+
+        // 模拟训练轮次
+        function simulateTrainingRound() {
+            if (!cy) return;
+
+            // 客户端上传动画
+            const activeClients = cy.nodes('[layer="L0"][participating="true"]');
+            activeClients.forEach((client, index) => {
+                setTimeout(() => {
+                    client.animate({
+                        style: { 'background-color': '#fff', 'width': 35, 'height': 35 }
+                    }, {
+                        duration: 300,
+                        complete: () => {
+                            client.animate({
+                                style: { 'background-color': '#52c41a', 'width': 28, 'height': 28 }
+                            }, { duration: 300 });
+                        }
+                    });
+                }, index * 100);
+            });
+
+            // 代理聚合动画
+            setTimeout(() => {
+                const proxies = cy.nodes('[layer="L2"]');
+                proxies.animate({
+                    style: { 'background-color': '#faad14', 'width': 55, 'height': 55 }
+                }, {
+                    duration: 800,
+                    complete: () => {
+                        proxies.forEach(proxy => {
+                            const clusterId = proxy.data('clusterId');
+                            const colors = ['#1890ff', '#52c41a', '#fa8c16'];
+                            proxy.animate({
+                                style: { 
+                                    'background-color': colors[clusterId - 1], 
+                                    'width': 45, 
+                                    'height': 45 
+                                }
+                            }, { duration: 300 });
+                        });
+                    }
+                });
+            }, 1000);
+
+            // 全局聚合动画
+            setTimeout(() => {
+                const aggregator = cy.nodes('[layer="L3"]');
+                aggregator.animate({
+                    style: { 
+                        'background-color': '#faad14', 
+                        'width': 80, 
+                        'height': 80 
+                    }
+                }, {
+                    duration: 1000,
+                    complete: () => {
+                        aggregator.animate({
+                            style: { 
+                                'background-color': '#722ed1', 
+                                'width': 60, 
+                                'height': 60 
+                            }
+                        }, { duration: 500 });
+                    }
+                });
+            }, 2000);
+        }
+
+        // 重置视图
+        function resetView() {
+            if (!cy) return;
+            cy.fit();
+            cy.center();
+        }
+
+        // 适应视图
+        function fitView() {
+            if (!cy) return;
+            cy.fit();
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initCytoscape();
+        });
+    </script>
+</body>
+</html>

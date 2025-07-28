@@ -194,7 +194,7 @@ import {
   DownloadOutlined,
   CameraOutlined
 } from '@ant-design/icons-vue'
-import ClusterTopologyCard from '@/components/ClusterTopologyCard.vue'
+import ClusterTopologyCard from '@/components/ClusterTopologyCardCytoscape.vue'
 import ProgressPanel from '@/components/ProgressPanel.vue'
 import MetricsTabs from '@/components/MetricsTabs.vue'
 
