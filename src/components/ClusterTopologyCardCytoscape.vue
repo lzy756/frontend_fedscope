@@ -3,37 +3,15 @@
     <a-card title="分簇联邦学习拓扑图 (四层架构)" :loading="loading">
       <template #extra>
         <a-space>
-          <a-select
-            v-model:value="layoutType"
-            size="small"
-            style="width: 120px"
-            @change="changeLayout"
-          >
-            <a-select-option value="preset">固定布局</a-select-option>
-            <a-select-option value="concentric">同心圆布局</a-select-option>
-            <a-select-option value="dagre">层次布局</a-select-option>
-            <a-select-option value="grid">网格布局</a-select-option>
-          </a-select>
           <a-button 
             size="small" 
             @click="showFormulaModal"
             title="查看公式详情"
           >
             <template #icon>
-              <ZoomInOutlined />
+              <FunctionOutlined />
             </template>
             公式
-          </a-button>
-          <a-button 
-            size="small" 
-            :disabled="!canReplay"
-            @click="toggleReplay"
-          >
-            <template #icon>
-              <PlayCircleOutlined v-if="!isReplaying" />
-              <PauseCircleOutlined v-else />
-            </template>
-            {{ isReplaying ? '暂停' : '回放' }}
           </a-button>
           <a-button size="small" @click="resetView">
             <template #icon>
@@ -140,6 +118,72 @@
           </div>
         </div>
         
+        <h4>符号释义</h4>
+        <div class="formula-block">
+          <div class="formula-desc">
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('L')"></span>
+              <span class="symbol-colon">：</span>
+              <span>模型总层数</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('p')"></span>
+              <span class="symbol-colon">：</span>
+              <span>张量阶数（层参数展成张量后的阶数）</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('M')"></span>
+              <span class="symbol-colon">：</span>
+              <span>客户端总数</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('w_i^l')"></span>
+              <span class="symbol-colon">：</span>
+              <span>客户端<span v-html="katex.renderToString('i')"></span>在第<span v-html="katex.renderToString('l')"></span>层的共享参数</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('W^l')"></span>
+              <span class="symbol-colon">：</span>
+              <span>第<span v-html="katex.renderToString('l')"></span>层所有客户端共享参数堆叠成的张量</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\mathcal{L}_r')"></span>
+              <span class="symbol-colon">：</span>
+              <span>正则化损失 <span v-html="katex.renderToString('\\mathcal{L}_r = \\sum_{l=1}^L \\sum_{k=1}^{p} \\left\\| W_{(k)}^l \\right\\|_*')"></span></span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('W_{(k)}^l')"></span>
+              <span class="symbol-colon">：</span>
+              <span>张量<span v-html="katex.renderToString('W^l')"></span>在第<span v-html="katex.renderToString('k')"></span>模下的 unfolding 矩阵</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('U, V')"></span>
+              <span class="symbol-colon">：</span>
+              <span><span v-html="katex.renderToString('W_{(k)}^l')"></span>的 SVD 分解结果，用于计算迹范数的次梯度 <span v-html="katex.renderToString('\\frac{\\partial \\left\\| W_{(k)}^l \\right\\|_*}{\\partial W_{(k)}^l} = U V^\\top')"></span></span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\eta_w')"></span>
+              <span class="symbol-colon">：</span>
+              <span>FedSAK 步长 (学习率)</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\tilde{w}_i^t')"></span>
+              <span class="symbol-colon">：</span>
+              <span>服务器针对客户端<span v-html="katex.renderToString('i')"></span>个性化后的共享层</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('|\\cdot|_*')"></span>
+              <span class="symbol-colon">：</span>
+              <span>矩阵核范数（trace norm）</span>
+            </div>
+            <div class="symbol-definition">
+              <span class="symbol-label" v-html="katex.renderToString('\\mathrm{stack}(\\cdot)')"></span>
+              <span class="symbol-colon">：</span>
+              <span>沿新维度将向量/矩阵堆叠为张量</span>
+            </div>
+          </div>
+        </div>
+        
         <h4>当前参数</h4>
         <a-descriptions :column="2" size="small">
           <a-descriptions-item label="正则化系数">
@@ -217,10 +261,9 @@ import cola from 'cytoscape-cola'
 import popper from 'cytoscape-popper'
 import * as katex from 'katex'
 import { 
-  PlayCircleOutlined, 
-  PauseCircleOutlined, 
   ReloadOutlined,
-  ZoomInOutlined
+  ZoomInOutlined,
+  FunctionOutlined
 } from '@ant-design/icons-vue'
 
 // 注册 Cytoscape 插件
@@ -251,9 +294,6 @@ const cytoscapeContainer = ref(null)
 const formulaModalVisible = ref(false)
 const nodeDrawerVisible = ref(false)
 const selectedNode = ref(null)
-const isReplaying = ref(false)
-const canReplay = ref(true)
-const layoutType = ref('preset')
 
 let cy = null
 let animationTimer = null
@@ -424,38 +464,61 @@ const generateTopologyData = () => {
       })
     })
   } else if (props.currentRound <= 5) {
-    // 第3-5轮：聚类过程，逐渐减少连接，增加动态消失效果
-    const clusteringProgress = (props.currentRound - 2) / 3  // 0 到 1
+    // 第3-5轮：聚类过程，修改动画逻辑
     const clients = nodes.filter(n => n.data.layer === 'L0')
     const proxies = nodes.filter(n => n.data.layer === 'L2')
     
+    // 使用固定种子确保每轮的随机结果一致
+    const roundSeed = props.currentRound * 1000
+    const seededRandom = (index) => {
+      const x = Math.sin(roundSeed + index) * 10000
+      return x - Math.floor(x)
+    }
+    
+    let connectionIndex = 0
     clients.forEach(client => {
       proxies.forEach(proxy => {
         const isTargetCluster = proxy.data.clusterId === client.data.clusterId
         
         if (!isTargetCluster) {
-          const shouldConnect = Math.random() > clusteringProgress * 0.7
-          if (shouldConnect) {
-            // 随机选择连接的状态
-            const rand = Math.random()
-            let edgeType = 'full-connect'
-            let phase = 'fading'
-            
-            if (clusteringProgress > 0.3 && rand < 0.3) {
-              edgeType = 'full-connect-warning'
-              phase = 'warning'
-            } else if (clusteringProgress > 0.6 && rand < 0.5) {
+          const rand = seededRandom(connectionIndex++)
+          let edgeType, phase
+          
+          if (props.currentRound === 3) {
+            // 第3轮：70%变为黄色虚线，30%彻底消失
+            if (rand < 0.7) {
+              edgeType = 'full-connect'
+              phase = 'to-warning'
+            } else {
               edgeType = 'full-connect-disappearing'
-              phase = 'disappearing'
+              phase = 'disappearing-round3'
             }
-            
+          } else if (props.currentRound === 4) {
+            // 第4轮：在剩余70%中，再有30%消失，40%继续为黄色虚线
+            if (rand < 0.49) { // 70% * 70% = 49%
+              edgeType = 'full-connect-warning'
+              phase = 'warning-fading'
+            } else if (rand < 0.7) { // 剩余的21%消失
+              edgeType = 'full-connect-disappearing'
+              phase = 'disappearing-round4'
+            }
+            // 其余30%在第3轮已经消失，不添加
+          } else if (props.currentRound === 5) {
+            // 第5轮：剩余连接最终消失
+            if (rand < 0.49) { // 只有第3、4轮都存活的连接
+              edgeType = 'full-connect-disappearing'
+              phase = 'final-disappearing'
+            }
+          }
+          
+          // 只有定义了edgeType才添加边
+          if (edgeType) {
             edges.push({
               data: {
                 id: `clustering_${client.data.id}_${proxy.data.id}`,
                 source: proxy.data.id,
                 target: client.data.id,
                 type: edgeType,
-                strength: Math.max(0.1, 1.0 - clusteringProgress),
                 animated: false,
                 phase: phase
               }
@@ -464,25 +527,6 @@ const generateTopologyData = () => {
         }
       })
     })
-  }
-  
-  // 簇间连接（仅在前2轮显示）
-  if (props.currentRound <= 2) {
-    for (let i = 1; i <= currentParams.value.numClusters; i++) {
-      for (let j = 1; j <= currentParams.value.numClusters; j++) {
-        if (i !== j) {
-          edges.push({
-            data: {
-              id: `inter_cluster_${i}_${j}`,
-              source: `proxy_${i}`,
-              target: `proxy_${j}`,
-              type: 'inter-cluster',
-              animated: false
-            }
-          })
-        }
-      }
-    }
   }
   
   return { nodes, edges }
@@ -753,18 +797,6 @@ const getCytoscapeStyle = () => {
       }
     },
     
-    // 簇间连接（浅橙色虚线）
-    {
-      selector: 'edge[type="inter-cluster"]',
-      style: {
-        'line-color': '#ffc53d',
-        'target-arrow-color': '#ffc53d',
-        'width': 2,
-        'line-style': 'dashed',
-        'opacity': 0.5,
-        'curve-style': 'straight'
-      }
-    },
     
     // 动画边效果
     {
@@ -775,24 +807,24 @@ const getCytoscapeStyle = () => {
       }
     },
     
-    // 选中状态
+    // 选中状态 - 只针对非L1层节点
     {
-      selector: ':selected',
+      selector: 'node[layer != "L1"]:selected',
       style: {
-        'border-width': 5,
-        'border-color': '#ff7875',
-        'box-shadow': '0px 0px 25px rgba(255, 120, 117, 0.6)',
+        'border-width': 4,
+        'border-color': '#40a9ff',
+        'box-shadow': '0px 0px 20px rgba(64, 169, 255, 0.5)',
         'z-index': 100
       }
     },
     
-    // 高亮状态
+    // 高亮状态 - 只针对非L1层节点
     {
-      selector: '.highlighted',
+      selector: 'node[layer != "L1"].highlighted',
       style: {
         'border-width': 4,
-        'border-color': '#faad14',
-        'box-shadow': '0px 0px 20px rgba(250, 173, 20, 0.6)',
+        'border-color': '#40a9ff',
+        'box-shadow': '0px 0px 20px rgba(64, 169, 255, 0.6)',
         'z-index': 50
       }
     },
@@ -801,20 +833,20 @@ const getCytoscapeStyle = () => {
     {
       selector: 'edge.highlighted',
       style: {
-        'line-color': '#faad14',
-        'target-arrow-color': '#faad14',
+        'line-color': '#40a9ff',
+        'target-arrow-color': '#40a9ff',
         'width': 4,
         'opacity': 1,
         'z-index': 50
       }
     },
     
-    // 悬停效果
+    // 悬停效果 - 排除L1层节点
     {
-      selector: 'node:active',
+      selector: 'node[layer != "L1"]:active',
       style: {
         'overlay-opacity': 0.1,
-        'overlay-color': '#1890ff'
+        'overlay-color': '#40a9ff'
       }
     }
   ]
@@ -883,10 +915,10 @@ const getLayoutConfig = (type = 'preset') => {
         
         return { x: 400, y: 300 } // 默认位置
       },
-      fit: true, // 改为true，确保打开界面时能完整显示拓扑图
-      padding: 50,
-      animate: true,
-      animationDuration: 1000
+      fit: false, // 改为false，避免自动缩放改变精心设计的布局
+      padding: 20,
+      animate: false, // 改为false，避免动画干扰
+      animationDuration: 0
     },
     concentric: {
       name: 'concentric',
@@ -936,7 +968,7 @@ const initCytoscape = () => {
     container: cytoscapeContainer.value,
     elements: [...nodes, ...edges],
     style: getCytoscapeStyle(),
-    layout: getLayoutConfig(layoutType.value),
+    layout: getLayoutConfig(),
     
     // 交互配置
     minZoom: 0.3,
@@ -949,7 +981,47 @@ const initCytoscape = () => {
     textureOnViewport: false,
     hideEdgesOnViewport: false,
     hideLabelsOnViewport: false,
-    pixelRatio: 'auto'
+    pixelRatio: 'auto',
+    
+    // 视口配置
+    autoungrabify: false,
+    userZoomingEnabled: true,
+    userPanningEnabled: true,
+    boxSelectionEnabled: false
+  })
+  
+  // 布局完成后自适应大小
+  cy.ready(() => {
+    // 等待DOM完全渲染后进行优化
+    setTimeout(() => {
+      // 计算合适的缩放比例，使拓扑图更好地利用容器空间
+      const container = cytoscapeContainer.value
+      if (container) {
+        const containerWidth = container.clientWidth
+        const containerHeight = container.clientHeight
+        
+        // 基于设计的坐标范围计算合适的缩放
+        // 设计范围：x: 0-800, y: 0-430左右
+        const designWidth = 800
+        const designHeight = 430
+        
+        // 计算缩放比例，留出一些边距
+        const scaleX = (containerWidth - 40) / designWidth  // 40px边距
+        const scaleY = (containerHeight - 40) / designHeight // 40px边距
+        const scale = Math.min(scaleX, scaleY, 1.2) // 最大不超过1.2倍
+        
+        // 设置缩放和居中
+        cy.zoom(scale)
+        cy.center()
+        
+        // 微调位置确保内容居中
+        const pan = cy.pan()
+        cy.pan({
+          x: pan.x,
+          y: pan.y + 10  // 稍微下移一点，确保顶部聚合器可见
+        })
+      }
+    }, 100)
   })
   
 //   // 强制设置聚合器位置
@@ -972,8 +1044,10 @@ const initCytoscape = () => {
   // 添加事件监听
   setupEventListeners()
   
-  // 启动动画
-  startTrainingAnimation()
+  // 只有在实时模式下才启动动画
+  if (props.isLive) {
+    startTrainingAnimation()
+  }
 }
 
 // 设置事件监听
@@ -987,10 +1061,6 @@ const setupEventListeners = () => {
     
     // 清除之前的高亮
     cy.elements().removeClass('highlighted')
-    
-    // 高亮当前节点及其邻居
-    node.addClass('highlighted')
-    node.neighborhood().addClass('highlighted')
     
     selectedNode.value = {
       ...nodeData,
@@ -1010,75 +1080,69 @@ const setupEventListeners = () => {
   // 节点悬停效果
   cy.on('mouseover', 'node', (evt) => {
     const node = evt.target
-    if (!node.hasClass('highlighted')) {
-      node.style({
-        'border-width': node.data('layer') === 'L3' ? 6 : 
-                       node.data('layer') === 'L2' ? 5 : 4,
-        'border-color': '#faad14'
-      })
+    const nodeData = node.data()
+    
+    // 排除L1层节点的悬停效果
+    if (nodeData.layer === 'L1') {
+      return
     }
     
-    // 显示工具提示
-    const nodeData = node.data()
-    const tooltip = `${nodeData.label}\n${nodeData.description || ''}`
-    node.popover({
-      content: tooltip,
-      position: 'top'
+    const originalBorderWidth = getOriginalBorderWidth(nodeData.layer)
+    node.style({
+      'border-width': originalBorderWidth + 2,
+      'border-color': '#40a9ff' // 使用更协调的蓝色
     })
   })
   
   cy.on('mouseout', 'node', (evt) => {
     const node = evt.target
-    if (!node.hasClass('highlighted') && !node.selected()) {
-      // 重置节点样式到默认状态
-      resetNodeStyle(node)
+    const nodeData = node.data()
+    
+    // 排除L1层节点
+    if (nodeData.layer === 'L1') {
+      return
     }
+    
+    // 重置节点样式到默认状态
+    resetNodeStyle(node)
   })
   
   // 边悬停效果
   cy.on('mouseover', 'edge', (evt) => {
     const edge = evt.target
-    if (!edge.hasClass('highlighted')) {
-      const currentWidth = parseInt(edge.style('width'))
-      edge.style({
-        'width': currentWidth + 2,
-        'opacity': 1,
-        'z-index': 100
-      })
-    }
+    const currentWidth = parseInt(edge.style('width'))
+    edge.style({
+      'width': currentWidth + 2,
+      'opacity': 1,
+      'z-index': 100
+    })
   })
   
   cy.on('mouseout', 'edge', (evt) => {
     const edge = evt.target
-    if (!edge.hasClass('highlighted')) {
-      // 使用 getEdgeDefaultStyle 函数获取默认样式
-      const defaultStyle = getEdgeDefaultStyle(edge)
-      edge.style(defaultStyle)
-    }
+    // 使用 getEdgeDefaultStyle 函数获取默认样式
+    const defaultStyle = getEdgeDefaultStyle(edge)
+    edge.style(defaultStyle)
   })
+  
+  // 获取节点原始边框宽度的辅助函数
+  const getOriginalBorderWidth = (layer) => {
+    switch (layer) {
+      case 'L3': return 3
+      case 'L2': return 3
+      case 'L0': return 2
+      default: return 2
+    }
+  }
   
   // 重置节点样式到默认状态
   const resetNodeStyle = (node) => {
     const layer = node.data('layer')
-    let originalBorderWidth, originalBorderColor
-    
-    switch (layer) {
-      case 'L3':
-        originalBorderWidth = 4
-        originalBorderColor = '#fff'
-        break
-      case 'L2':
-        originalBorderWidth = 3
-        originalBorderColor = '#fff'
-        break
-      default: // L0, L1
-        originalBorderWidth = 2
-        originalBorderColor = '#fff'
-    }
+    const originalBorderWidth = getOriginalBorderWidth(layer)
     
     node.style({
       'border-width': originalBorderWidth,
-      'border-color': originalBorderColor
+      'border-color': '#fff'
     })
   }
   
@@ -1134,10 +1198,11 @@ const startTrainingAnimation = () => {
     clearInterval(animationTimer)
   }
   
+  // 只有在实时模式下才启动动画
+  if (!props.isLive) return
+  
   // 每3秒执行一次训练轮次动画
   animationTimer = setInterval(() => {
-    if (!isReplaying.value) return
-    
     simulateTrainingRound()
   }, 3000)
 }
@@ -1299,6 +1364,7 @@ const simulateTrainingRound = () => {
   }, 2500)
   
   // 4. 模型分发动画（可选，显示聚合器向代理分发模型）
+  /*
   setTimeout(() => {
     const aggEdges = cy.edges('[type="agg-proxy"]')
     aggEdges.animate({
@@ -1322,6 +1388,7 @@ const simulateTrainingRound = () => {
       }
     })
   }, 4500)
+  */
 }
 
 // 更新拓扑数据 - 只更新数据，不重新布局
@@ -1361,19 +1428,13 @@ const updateTopology = () => {
   
   // 只在第一次初始化时应用布局
   if (Object.keys(nodePositions).length === 0) {
-    cy.layout(getLayoutConfig(layoutType.value)).run()
+    cy.layout(getLayoutConfig()).run()
   } else {
     // 确保聚合器位置正确
     const aggregator = cy.getElementById('aggregator')
     if (aggregator.length > 0) {
       aggregator.position({ x: 400, y: 0 })
     }
-    
-    // 确保簇2位置正确
-    // const cluster2 = cy.getElementById('cluster_group_2')
-    // if (cluster2.length > 0) {
-    //   cluster2.position({ x: 400, y: 320 })
-    // }
   }
   
   // 触发全连接边的动态效果
@@ -1391,11 +1452,10 @@ const animateFullConnectionDisappearance = () => {
   
   fullConnectEdges.forEach((edge, index) => {
     setTimeout(() => {
-      const edgeType = edge.data('type')
       const phase = edge.data('phase')
       
-      if (phase === 'fading') {
-        // 灰色 -> 虚线黄色
+      if (phase === 'to-warning') {
+        // 第3轮：灰色线变为黄色虚线（只执行一次）
         edge.animate({
           style: {
             'line-color': '#faad14',
@@ -1403,46 +1463,10 @@ const animateFullConnectionDisappearance = () => {
             'opacity': 0.6
           }
         }, {
-          duration: 800,
-          complete: () => {
-            // 黄色虚线 -> 红色点线
-            edge.animate({
-              style: {
-                'line-color': '#ff7875',
-                'line-style': 'dotted',
-                'opacity': 0.3
-              }
-            }, {
-              duration: 600,
-              complete: () => {
-                // 最后淡出消失
-                edge.animate({
-                  style: {
-                    'opacity': 0
-                  }
-                }, {
-                  duration: 400,
-                  complete: () => {
-                    edge.remove()
-                  }
-                })
-              }
-            })
-          }
+          duration: 1000
         })
-      } else if (phase === 'warning') {
-        // 直接变为黄色虚线
-        edge.animate({
-          style: {
-            'line-color': '#faad14',
-            'line-style': 'dashed',
-            'opacity': 0.6
-          }
-        }, {
-          duration: 500
-        })
-      } else if (phase === 'disappearing') {
-        // 直接变为红色点线后消失
+      } else if (phase === 'disappearing-round3') {
+        // 第3轮：30%的连接直接消失
         edge.animate({
           style: {
             'line-color': '#ff7875',
@@ -1450,14 +1474,71 @@ const animateFullConnectionDisappearance = () => {
             'opacity': 0.3
           }
         }, {
-          duration: 300,
+          duration: 600,
           complete: () => {
             edge.animate({
               style: {
                 'opacity': 0
               }
             }, {
-              duration: 200,
+              duration: 400,
+              complete: () => {
+                edge.remove()
+              }
+            })
+          }
+        })
+      } else if (phase === 'warning-fading') {
+        // 第4轮：黄色虚线继续保持
+        edge.animate({
+          style: {
+            'line-color': '#faad14',
+            'line-style': 'dashed',
+            'opacity': 0.5
+          }
+        }, {
+          duration: 800
+        })
+      } else if (phase === 'disappearing-round4') {
+        // 第4轮：再有30%的连接消失
+        edge.animate({
+          style: {
+            'line-color': '#ff7875',
+            'line-style': 'dotted',
+            'opacity': 0.3
+          }
+        }, {
+          duration: 500,
+          complete: () => {
+            edge.animate({
+              style: {
+                'opacity': 0
+              }
+            }, {
+              duration: 600,
+              complete: () => {
+                edge.remove()
+              }
+            })
+          }
+        })
+      } else if (phase === 'final-disappearing') {
+        // 第5轮：最终剩余连接消失
+        edge.animate({
+          style: {
+            'line-color': '#ff7875',
+            'line-style': 'dotted',
+            'opacity': 0.2
+          }
+        }, {
+          duration: 500,
+          complete: () => {
+            edge.animate({
+              style: {
+                'opacity': 0
+              }
+            }, {
+              duration: 800,
               complete: () => {
                 edge.remove()
               }
@@ -1465,7 +1546,7 @@ const animateFullConnectionDisappearance = () => {
           }
         })
       }
-    }, index * 100) // 交错执行
+    }, index * 80) // 交错执行
   })
 }
 
@@ -1498,35 +1579,68 @@ const generateNodeLogs = (nodeId) => {
 }
 
 // 控制函数
-const changeLayout = (type) => {
-  if (!cy) return
-  cy.layout(getLayoutConfig(type)).run()
-}
-
 const showFormulaModal = () => {
   formulaModalVisible.value = true
 }
 
-const toggleReplay = () => {
-  isReplaying.value = !isReplaying.value
-  if (isReplaying.value) {
-    startTrainingAnimation()
-  } else {
-    if (animationTimer) {
-      clearInterval(animationTimer)
-    }
-  }
-}
-
 const resetView = () => {
   if (!cy) return
-  cy.fit()
-  cy.center()
+  
+  // 恢复到预设的初始布局
+  const layout = getLayoutConfig('preset')
+  const layoutRunner = cy.layout(layout)
+  
+  layoutRunner.run()
+  
+  // 等待布局完成后设置合适的缩放和位置
+  layoutRunner.one('layoutstop', () => {
+    const container = cytoscapeContainer.value
+    if (container) {
+      const containerWidth = container.clientWidth
+      const containerHeight = container.clientHeight
+      
+      // 基于设计的坐标范围计算合适的缩放
+      const designWidth = 800
+      const designHeight = 430
+      
+      // 计算缩放比例
+      const scaleX = (containerWidth - 40) / designWidth
+      const scaleY = (containerHeight - 40) / designHeight
+      const scale = Math.min(scaleX, scaleY, 1.2)
+      
+      // 重置位置并设置缩放
+      cy.zoom(scale)
+      cy.center()
+      
+      // 微调位置
+      const pan = cy.pan()
+      cy.pan({
+        x: pan.x,
+        y: pan.y + 10
+      })
+    }
+  })
 }
 
 const fitToView = () => {
   if (!cy) return
-  cy.fit()
+  
+  // 使用自定义适应逻辑，保持设计比例
+  const container = cytoscapeContainer.value
+  if (container) {
+    const containerWidth = container.clientWidth
+    const containerHeight = container.clientHeight
+    
+    const designWidth = 800
+    const designHeight = 430
+    
+    const scaleX = (containerWidth - 30) / designWidth
+    const scaleY = (containerHeight - 30) / designHeight
+    const scale = Math.min(scaleX, scaleY, 1.5) // 适应时可以放大到1.5倍
+    
+    cy.zoom(scale)
+    cy.center()
+  }
 }
 
 // 监听器
@@ -1537,6 +1651,19 @@ watch(() => props.currentRound, () => {
 watch(() => props.experimentData, () => {
   updateTopology()
 }, { deep: true })
+
+watch(() => props.isLive, (newValue) => {
+  if (newValue) {
+    // 当切换到实时模式时，启动动画
+    startTrainingAnimation()
+  } else {
+    // 当切换到非实时模式时，停止动画
+    if (animationTimer) {
+      clearInterval(animationTimer)
+      animationTimer = null
+    }
+  }
+})
 
 // 生命周期
 onMounted(async () => {
@@ -1680,10 +1807,10 @@ onUnmounted(() => {
 }
 
 .legend-edge.full-connect {
-  background-color: #fa541c;
-  border-style: dashed;
-  border-width: 2px 0 0 0;
-  height: 0;
+  background-color: #bfbfbf;
+  border-style: solid;
+  border-width: 0;
+  height: 1.5px;
 }
 
 .formula-content h4 {
@@ -1801,5 +1928,25 @@ onUnmounted(() => {
 
 .node-logs::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+.symbol-definition {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+  text-align: left;
+  font-style: normal;
+}
+
+.symbol-definition .symbol-label {
+  margin-right: 8px;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+}
+
+.symbol-definition .symbol-colon {
+  margin: 0 8px;
 }
 </style>
