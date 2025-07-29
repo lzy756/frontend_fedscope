@@ -380,7 +380,7 @@ const generateTopologyData = () => {
         source: 'aggregator',
         target: `proxy_${i}`,
         type: 'agg-proxy',
-        animated: true
+        animated: false // 注释掉闪烁动画：原来是 true
       }
     })
   }
@@ -799,6 +799,7 @@ const getCytoscapeStyle = () => {
     
     
     // 动画边效果
+    /*
     {
       selector: 'edge[animated="true"]',
       style: {
@@ -806,6 +807,7 @@ const getCytoscapeStyle = () => {
         'line-dash-offset': 24
       }
     },
+    */
     
     // 选中状态 - 只针对非L1层节点
     {
@@ -1314,6 +1316,7 @@ const simulateTrainingRound = () => {
     if (aggregator.length > 0) {
       
       // L2->L3 边动画（数据上传到聚合器）
+      /*
       const aggEdges = cy.edges('[type="agg-proxy"]')
       aggEdges.animate({
         style: {
@@ -1335,6 +1338,7 @@ const simulateTrainingRound = () => {
           })
         }
       })
+      */
       
       // 聚合器处理动画（FedSAK算法执行）
       aggregator.animate({
