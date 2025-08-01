@@ -101,7 +101,7 @@
               )
             "
           ></div>
-          <div class="formula-desc">其中 nᶜ 为客户端c的样本数</div>
+          <div class="formula-desc">其中 <Text v-html="katex.renderToString('n_c')"></Text> 为客户端 <Text v-html="katex.renderToString('c')"></Text> 的样本数</div>
         </div>
 
         <h4>簇间 FedSAK</h4>
@@ -758,6 +758,9 @@ const getCytoscapeStyle = () => {
         },
         "text-outline-width": 1,
         "text-outline-color": "#fff",
+        // 禁用border-color过渡动画，避免点击时的颜色闪烁
+        "transition-property": "width, height, box-shadow",
+        "transition-duration": "0.3s",
       },
     },
 
@@ -947,8 +950,8 @@ const getCytoscapeStyle = () => {
       selector: 'node[layer != "L1"]:selected',
       style: {
         "border-width": 4,
-        "border-color": "#40a9ff",
-        "box-shadow": "0px 0px 20px rgba(64, 169, 255, 0.5)",
+        "border-color": "#30d5c8",
+        "box-shadow": "0px 0px 20px rgba(48, 213, 200, 0.5)",
         "z-index": 100,
       },
     },
@@ -958,8 +961,38 @@ const getCytoscapeStyle = () => {
       selector: 'node[layer != "L1"].highlighted',
       style: {
         "border-width": 4,
-        "border-color": "#40a9ff",
-        "box-shadow": "0px 0px 20px rgba(64, 169, 255, 0.6)",
+        "border-color": "#30d5c8",
+        "box-shadow": "0px 0px 20px rgba(48, 213, 200, 0.6)",
+        "z-index": 50,
+      },
+    },
+
+    // L1层（簇）选中状态 - 虚线框变粗，保持原色
+    {
+      selector: 'node[layer="L1"]:selected',
+      style: {
+        "border-width": 4,
+        "border-color": (ele) => {
+          const clusterId = ele.data("clusterId");
+          const colors = ["#6BA3D0", "#95D475", "#FFC107"];
+          return colors[clusterId - 1] || "#6BA3D0";
+        },
+        "border-opacity": 1,
+        "z-index": 100,
+      },
+    },
+
+    // L1层（簇）高亮状态 - 虚线框变粗，保持原色
+    {
+      selector: 'node[layer="L1"].highlighted',
+      style: {
+        "border-width": 4,
+        "border-color": (ele) => {
+          const clusterId = ele.data("clusterId");
+          const colors = ["#6BA3D0", "#95D475", "#FFC107"];
+          return colors[clusterId - 1] || "#6BA3D0";
+        },
+        "border-opacity": 1,
         "z-index": 50,
       },
     },
@@ -968,8 +1001,8 @@ const getCytoscapeStyle = () => {
     {
       selector: "edge.highlighted",
       style: {
-        "line-color": "#40a9ff",
-        "target-arrow-color": "#40a9ff",
+        "line-color": "#30d5c8",
+        "target-arrow-color": "#30d5c8",
         width: 4,
         opacity: 1,
         "z-index": 50,
@@ -981,7 +1014,7 @@ const getCytoscapeStyle = () => {
       selector: 'node[layer != "L1"]:active',
       style: {
         "overlay-opacity": 0.1,
-        "overlay-color": "#40a9ff",
+        "overlay-color": "#30d5c8",
       },
     },
   ];
@@ -1217,15 +1250,22 @@ const setupEventListeners = () => {
     const node = evt.target;
     const nodeData = node.data();
 
-    // 排除L1层节点的悬停效果
+    // L1层节点的悬停效果（虚线框变粗，保持原色）
     if (nodeData.layer === "L1") {
+      const clusterId = nodeData.clusterId;
+      const colors = ["#6BA3D0", "#95D475", "#FFC107"];
+      node.style({
+        "border-width": 3,
+        "border-color": colors[clusterId - 1] || "#6BA3D0",
+        "border-opacity": 1,
+      });
       return;
     }
 
     const originalBorderWidth = getOriginalBorderWidth(nodeData.layer);
     node.style({
       "border-width": originalBorderWidth + 2,
-      "border-color": "#40a9ff", // 使用更协调的蓝色
+      "border-color": "#30d5c8", // 使用青色高亮
     });
   });
 
@@ -1233,8 +1273,15 @@ const setupEventListeners = () => {
     const node = evt.target;
     const nodeData = node.data();
 
-    // 排除L1层节点
+    // L1层节点恢复原始虚线框样式
     if (nodeData.layer === "L1") {
+      const clusterId = nodeData.clusterId;
+      const colors = ["#6BA3D0", "#95D475", "#FFC107"];
+      node.style({
+        "border-width": 2,
+        "border-color": colors[clusterId - 1] || "#6BA3D0",
+        "border-opacity": 0.7,
+      });
       return;
     }
 
