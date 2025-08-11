@@ -159,8 +159,8 @@
               <a-tooltip title="查看详情">
                 <EyeOutlined @click.stop="showModelDetail(model)" />
               </a-tooltip>
-              <a-tooltip title="下载模型">
-                <DownloadOutlined @click.stop="downloadModel(model)" />
+              <a-tooltip title="测试模型">
+                <BarChartOutlined @click.stop="openTestDialog(model)" />
               </a-tooltip>
               <a-tooltip title="部署模型">
                 <RocketOutlined @click.stop="deployModel(model)" />
@@ -546,6 +546,14 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 模型测试弹窗 -->
+    <ModelTestDialog
+      v-model:visible="testDialogVisible"
+      :model-id="testModelId"
+      :model-name="testModelName"
+      @close="testDialogVisible = false"
+    />
   </div>
 </template>
 
@@ -567,8 +575,10 @@ import {
   ExperimentOutlined,
   CodeOutlined,
   BranchesOutlined,
-  NodeIndexOutlined
+  NodeIndexOutlined,
+  BarChartOutlined
 } from '@ant-design/icons-vue'
+import ModelTestDialog from '@/components/ModelTestDialog.vue'
 
 // 响应式数据
 const searchText = ref('')
@@ -579,6 +589,10 @@ const compareModalVisible = ref(false)
 const uploadModalVisible = ref(false)
 const activeTab = ref('basic')
 const uploadFormRef = ref()
+// 测试弹窗状态
+const testDialogVisible = ref(false)
+const testModelId = ref(null)
+const testModelName = ref('')
 
 // 统计数据
 const totalModels = ref(24)
@@ -1115,9 +1129,10 @@ const showUploadModal = () => {
   uploadModalVisible.value = true
 }
 
-const downloadModel = (model) => {
-  message.info(`开始下载模型: ${model.name}`)
-  // 实际下载逻辑
+const openTestDialog = (model) => {
+  testModelId.value = model.id
+  testModelName.value = model.name
+  testDialogVisible.value = true
 }
 
 const deployModel = (model) => {

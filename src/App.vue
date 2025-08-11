@@ -102,9 +102,9 @@ const handleMenuClick = ({ key }) => {
     >
       <!-- Logo区域 -->
       <div class="logo">
-        <img v-if="!collapsed" src="./assets/logo.svg" alt="FederatedScope" class="logo-img" />
-        <img v-else src="./assets/logo.svg" alt="FS" class="logo-img-collapsed" />
-        <span v-if="!collapsed" class="logo-text">FederatedScope</span>
+        <img v-if="!collapsed" src="./assets/logo.png" alt="FederatedScope" class="logo-img" />
+        <img v-else src="./assets/logo.png" alt="FS" class="logo-img-collapsed" />
+        <span v-if="!collapsed" class="logo-text">跨域训练管理页面</span>
       </div>
       
       <!-- 菜单 -->
@@ -193,7 +193,7 @@ const handleMenuClick = ({ key }) => {
 
 .logo {
   height: 64px;
-  padding: 14px;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -203,24 +203,24 @@ const handleMenuClick = ({ key }) => {
 }
 
 .logo-img {
-  height: 32px;
-  width: 32px;
+  height: 45px;
+  width: 45px;
   /* margin-right: 12px; */
   align-self: center;
 }
 
 .logo-img-collapsed {
-  height: 24px;
-  width: 24px;
+  height: 48px;
+  width: 48px;
   align-self: center;
 }
 
 .logo-text {
   color: white;
-  font-size: 16px;
+  font-size: 14.5px;
   font-weight: 500;
   white-space: nowrap;
-  margin-left: 3px;
+  /* margin-left: 3px; */
 }
 
 .app-menu {
