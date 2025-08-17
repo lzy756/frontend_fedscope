@@ -15,6 +15,7 @@ import Models from './views/Models.vue'
 import Participants from './views/Participants.vue'
 import Settings from './views/Settings.vue'
 import Datasets from './views/Datasets.vue' // 导入数据集组件
+import ClusterFedSAKView from './views/ClusterFedSAKView.vue' // 导入分簇-FedSAK页面组件
 
 // 配置路由
 const routes = [
@@ -24,7 +25,8 @@ const routes = [
   { path: '/models', component: Models, name: 'Models' },
   { path: '/participants', component: Participants, name: 'Participants' },
   { path: '/settings', component: Settings, name: 'Settings' },
-  { path: '/datasets', component: Datasets, name: 'Datasets' } // 新增数据集页面路由
+  { path: '/datasets', component: Datasets, name: 'Datasets' }, // 新增数据集页面路由
+  { path: '/cluster-fedsak', component: ClusterFedSAKView, name: 'ClusterFedSAK' } // 新增分簇-FedSAK页面路由
 ]
 
 const router = createRouter({

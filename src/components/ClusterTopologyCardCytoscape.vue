@@ -1162,35 +1162,48 @@ const initCytoscape = () => {
   cy.ready(() => {
     // 等待DOM完全渲染后进行优化
     setTimeout(() => {
-      // 计算合适的缩放比例，使拓扑图更好地利用容器空间
-      const container = cytoscapeContainer.value;
-      if (container) {
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
+      // 确保容器尺寸已经正确计算
+      const checkAndFit = () => {
+        const container = cytoscapeContainer.value;
+        if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+          // 计算合适的缩放比例，使拓扑图更好地利用容器空间
+          const containerWidth = container.clientWidth;
+          const containerHeight = container.clientHeight;
 
-        // 基于设计的坐标范围计算合适的缩放
-        // 设计范围：x: 0-800, y: 0-430左右
-        const designWidth = 800;
-        const designHeight = 430;
+          // 基于设计的坐标范围计算合适的缩放
+          // 设计范围：x: 0-800, y: 0-430左右
+          const designWidth = 800;
+          const designHeight = 430;
 
-        // 计算缩放比例，留出一些边距
-        const scaleX = (containerWidth - 40) / designWidth; // 40px边距
-        const scaleY = (containerHeight - 40) / designHeight; // 40px边距
-        const scale = Math.min(scaleX, scaleY, 1.2); // 最大不超过1.2倍
+          // 计算缩放比例，留出更多边距，避免边框被遮盖
+          const scaleX = (containerWidth - 60) / designWidth; // 增加到60px边距
+          const scaleY = (containerHeight - 60) / designHeight; // 增加到60px边距
+          const scale = Math.min(scaleX, scaleY, 1.0); // 最大不超过1.0倍，稍微缩小整体
 
-        // 设置缩放和居中
-        cy.zoom(scale);
-        cy.center();
+          // 设置缩放和居中
+          cy.zoom(scale);
+          cy.center();
 
-        // 微调位置确保内容居中
-        const pan = cy.pan();
-        cy.pan({
-          x: pan.x,
-          y: pan.y + 10, // 稍微下移一点，确保顶部聚合器可见
-        });
-      }
+          // 微调位置确保内容居中
+          const pan = cy.pan();
+          cy.pan({
+            x: pan.x,
+            y: pan.y,
+          });
+        } else {
+          // 如果容器尺寸还没有确定，等待一段时间后再次检查
+          setTimeout(checkAndFit, 100);
+        }
+      };
+      
+      checkAndFit();
     }, 100);
   });
+
+  // 确保在初始化完成后执行一次自适应
+  setTimeout(() => {
+    fitToView();
+  }, 100);
 
   //   // 强制设置聚合器位置
   //   setTimeout(() => {
@@ -1892,9 +1905,9 @@ const fitToView = () => {
     const designWidth = 800;
     const designHeight = 430;
 
-    const scaleX = (containerWidth - 30) / designWidth;
-    const scaleY = (containerHeight - 30) / designHeight;
-    const scale = Math.min(scaleX, scaleY, 1.5); // 适应时可以放大到1.5倍
+    const scaleX = (containerWidth - 70) / designWidth; // 进一步增加边距到70px
+    const scaleY = (containerHeight - 70) / designHeight; // 进一步增加边距到70px
+    const scale = Math.min(scaleX, scaleY, 1.0); // 进一步降低最大放大倍数到1.0倍
 
     cy.zoom(scale);
     cy.center();
@@ -1935,8 +1948,16 @@ watch(
 
 // 生命周期
 onMounted(async () => {
-  await nextTick();
-  initCytoscape();
+  // 确保容器已经渲染并且有正确的尺寸
+  const waitForContainer = () => {
+    if (cytoscapeContainer.value && cytoscapeContainer.value.clientWidth > 0) {
+      initCytoscape();
+    } else {
+      setTimeout(waitForContainer, 10);
+    }
+  };
+  
+  waitForContainer();
 });
 
 onUnmounted(() => {
@@ -1961,7 +1982,7 @@ onUnmounted(() => {
 }
 
 .topology-container {
-  height: 430px;
+  height: 500px;
   width: 100%;
   border: 2px solid #e8e8e8;
   border-radius: 12px;

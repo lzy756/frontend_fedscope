@@ -388,10 +388,18 @@
           <!-- Cluster-FedSAK 标签页 -->
           <a-tab-pane key="cluster-fedsak" tab="分簇-FedSAK">
             <div class="cluster-fedsak-container">
-              <ClusterFedSAKView 
-                :experiment-id="selectedExperiment.id"
-                @back="detailModalVisible = false"
-                @experiment-update="handleExperimentUpdate"
+              <a-button type="primary" @click="goToClusterFedSAKPage">
+                <template #icon>
+                  <FullscreenOutlined />
+                </template>
+                查看分簇-FedSAK可视化
+              </a-button>
+              <a-alert
+                message="分簇-FedSAK 可视化已移至独立页面"
+                description="点击上方按钮跳转到分簇-FedSAK可视化页面，您可以在那里查看详细的可视化内容。"
+                type="info"
+                show-icon
+                style="margin-top: 16px;"
               />
             </div>
           </a-tab-pane>
@@ -419,7 +427,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
+import { message, Alert } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
 import {
   PlusOutlined,
   ReloadOutlined,
@@ -436,9 +445,12 @@ import {
   ClearOutlined,
   DatabaseOutlined,
   ClusterOutlined,
-  NodeIndexOutlined
+  NodeIndexOutlined,
+  FullscreenOutlined
 } from '@ant-design/icons-vue'
 import ClusterFedSAKView from '@/components/ClusterFedSAKView.vue'
+
+const router = useRouter()
 
 // 响应式数据
 const loading = ref(false)
@@ -747,6 +759,11 @@ const handleExperimentUpdate = ({ round, data }) => {
       selectedExperiment.value.logs = selectedExperiment.value.logs.slice(0, 50)
     }
   }
+}
+
+const goToClusterFedSAKPage = () => {
+  // 跳转到分簇-FedSAK页面
+  router.push('/cluster-fedsak')
 }
 
 const startExperiment = (record) => {

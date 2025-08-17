@@ -12,6 +12,7 @@ import {
   BellOutlined,
   DownOutlined,
   TableOutlined, // 引入TableOutlined图标
+  ClusterOutlined, // 引入ClusterOutlined图标
 } from '@ant-design/icons-vue'
 
 const router = useRouter()
@@ -43,6 +44,12 @@ const menuItems = [
     icon: TableOutlined, // 使用TableOutlined图标
     title: '数据集管理',
     path: '/datasets'
+  },
+  {
+    key: 'cluster-fedsak',
+    icon: ClusterOutlined, // 使用ClusterOutlined图标
+    title: '训练过程可视化',
+    path: '/cluster-fedsak'
   },
   {
     key: 'participants',
