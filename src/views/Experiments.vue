@@ -385,24 +385,7 @@
             </div>
           </a-tab-pane>
 
-          <!-- Cluster-FedSAK 标签页 -->
-          <a-tab-pane key="cluster-fedsak" tab="分簇-FedSAK">
-            <div class="cluster-fedsak-container">
-              <a-button type="primary" @click="goToClusterFedSAKPage">
-                <template #icon>
-                  <FullscreenOutlined />
-                </template>
-                查看分簇-FedSAK可视化
-              </a-button>
-              <a-alert
-                message="分簇-FedSAK 可视化已移至独立页面"
-                description="点击上方按钮跳转到分簇-FedSAK可视化页面，您可以在那里查看详细的可视化内容。"
-                type="info"
-                show-icon
-                style="margin-top: 16px;"
-              />
-            </div>
-          </a-tab-pane>
+          
 
           <!-- Logs 标签页 -->
           <a-tab-pane key="logs" tab="日志">
@@ -426,9 +409,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { message, Alert } from 'ant-design-vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { message } from 'ant-design-vue'
 import {
   PlusOutlined,
   ReloadOutlined,
@@ -445,12 +427,9 @@ import {
   ClearOutlined,
   DatabaseOutlined,
   ClusterOutlined,
-  NodeIndexOutlined,
-  FullscreenOutlined
+  NodeIndexOutlined
 } from '@ant-design/icons-vue'
-import ClusterFedSAKView from '@/components/ClusterFedSAKView.vue'
-
-const router = useRouter()
+// 已移除分簇-FedSAK内嵌视图
 
 // 响应式数据
 const loading = ref(false)
@@ -663,6 +642,11 @@ const filteredExperiments = computed(() => {
 // 生命周期
 onMounted(() => {
   loadData()
+  startProgressSimulator()
+})
+
+onBeforeUnmount(() => {
+  stopProgressSimulator()
 })
 
 // 方法
@@ -732,7 +716,8 @@ const handleCreateExperiment = async () => {
 
 const showDetail = (record) => {
   selectedExperiment.value = record
-  detailActiveTab.value = record.algorithm === 'Cluster-FedSAK' ? 'cluster-fedsak' : 'overview'
+  // 默认展示概览
+  detailActiveTab.value = 'overview'
   detailModalVisible.value = true
 }
 
@@ -761,10 +746,7 @@ const handleExperimentUpdate = ({ round, data }) => {
   }
 }
 
-const goToClusterFedSAKPage = () => {
-  // 跳转到分簇-FedSAK页面
-  router.push('/cluster-fedsak')
-}
+// 已移除分簇-FedSAK跳转按钮
 
 const startExperiment = (record) => {
   record.status = 'running'
@@ -851,6 +833,57 @@ const formatDuration = (duration) => {
     return `${seconds}秒`
   }
 }
+
+// 进度模拟器：每2秒推进运行中实验进度、增加持续时间并写入日志
+let progressTimer = null
+const startProgressSimulator = () => {
+  if (progressTimer) return
+  progressTimer = setInterval(() => {
+    const now = Date.now()
+    experiments.value.forEach(exp => {
+      if (exp.status === 'running') {
+        // 增加持续时间：+10秒
+        exp.duration = (exp.duration || 0) + 10000
+        // 依据参与方规模与学习率给一个小幅增量，越大越快，但限制区间
+        const base = 0.4
+        const sizeFactor = Math.min(1.5, (exp.participants || 1) / 10)
+        const lrFactor = Math.min(1.5, (exp.learningRate || 0.01) / 0.01)
+        const jitter = Math.random() * 0.6 // 0~0.6 抖动
+        const delta = base * sizeFactor * 0.6 + jitter
+        exp.progress = Math.min(100, Math.round((exp.progress || 0) + delta))
+
+        // 自动完成：到达或超过100即标记完成
+        if (exp.progress >= 100) {
+          exp.progress = 100
+          exp.status = 'completed'
+        }
+
+        // 每隔一段时间写一条轻量日志
+        if (!exp._lastLogAt || now - exp._lastLogAt > 6000) {
+          exp._lastLogAt = now
+          const pct = exp.progress
+          const log = {
+            id: now,
+            time: new Date().toLocaleTimeString(),
+            message: `训练推进中，当前进度 ${pct}%`,
+            type: 'info'
+          }
+          exp.logs = Array.isArray(exp.logs) ? exp.logs : []
+          exp.logs.unshift(log)
+          if (exp.logs.length > 50) exp.logs = exp.logs.slice(0, 50)
+        }
+      }
+    })
+    updateStats()
+  }, 10000)
+}
+
+const stopProgressSimulator = () => {
+  if (progressTimer) {
+    clearInterval(progressTimer)
+    progressTimer = null
+  }
+}
 </script>
 
 <style scoped>
@@ -901,14 +934,6 @@ const formatDuration = (duration) => {
 }
 
 /* 实验详情模态框样式 */
-.cluster-fedsak-container {
-  height: 70vh;
-  max-height: 900px;
-  max-width: 1300px;
-  padding: 0;
-  overflow: auto;
-  background: #f5f5f5;
-}
 
 .metrics-placeholder {
   height: 400px;
@@ -936,10 +961,7 @@ const formatDuration = (duration) => {
   .action-section {
     width: 100%;
   }
-  
-  .cluster-fedsak-container {
-    height: 60vh;
-  }
+
 }
 </style>
 
