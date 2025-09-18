@@ -17,7 +17,7 @@
           <span class="selector-label">实验选择:</span>
           <a-select
             v-model:value="selectedExperimentId"
-            style="width: 300px; margin-left: 12px;"
+            style="min-width: 200px; max-width: 300px; width: 100%; margin-left: 12px;"
             placeholder="选择实验"
             @change="onExperimentChange"
           >
@@ -533,9 +533,11 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
-  overflow: visible;
+  overflow-x: hidden;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  max-width: 100vw;
 }
 
 .view-header {
@@ -546,6 +548,9 @@ onUnmounted(() => {
   background: white;
   border-bottom: 1px solid #f0f0f0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .header-left {
@@ -574,6 +579,14 @@ onUnmounted(() => {
 .experiment-selector {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.selector-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .main-content {
@@ -639,36 +652,110 @@ onUnmounted(() => {
   color: #666;
 }
 
+/* 全局盒模型设置 */
+* {
+  box-sizing: border-box;
+}
+
+/* 容器溢出控制 */
+.main-content,
+.left-section,
+.progress-section,
+.topology-section,
+.metrics-section,
+.header-left,
+.header-center,
+.header-right {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .main-content {
     flex-direction: column;
+    gap: 12px;
   }
   
   .left-section {
     flex: none;
+    width: 100%;
   }
   
   .topology-section {
     flex: none;
+    width: 100%;
   }
   
   .progress-section {
     flex: none;
+    width: 100%;
   }
   
   .metrics-section {
     flex: none;
+    width: 100%;
+  }
+}
+
+@media (max-width: 968px) {
+  .view-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .header-center {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .experiment-selector {
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+    white-space: nowrap;
+  }
+  
+  .selector-label {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  
+  .experiment-selector .ant-select {
+    min-width: 150px !important;
+    max-width: 400px !important;
+    width: auto !important;
+    margin-left: 8px !important;
+    flex-grow: 1;
   }
 }
 
 @media (max-width: 768px) {
+  .cluster-fedsak-view {
+    padding: 0;
+  }
+  
   .view-header {
     flex-direction: column;
+    align-items: stretch;
     gap: 12px;
+    padding: 12px 16px;
   }
-  .header-center {
+  
+  .header-left,
+  .header-center,
+  .header-right {
     width: 100%;
+    justify-content: center;
+  }
+  
+  .header-left {
+    text-align: center;
+  }
+  
+  .header-right {
+    display: flex;
     justify-content: center;
   }
   
@@ -680,18 +767,33 @@ onUnmounted(() => {
   
   .left-section {
     flex: none;
+    width: 100%;
   }
   
   .topology-section {
     flex: none;
+    width: 100%;
   }
   
   .progress-section {
     flex: none;
+    width: 100%;
   }
   
   .metrics-section {
     flex: none;
+    width: 100%;
+  }
+  
+  /* 按钮组在小屏幕上换行 */
+  .header-right :deep(.ant-space) {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  /* 修复抽屉在移动端的宽度 */
+  :deep(.ant-drawer) {
+    max-width: 90vw;
   }
 }
 </style>
