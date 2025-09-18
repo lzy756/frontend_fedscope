@@ -3,16 +3,18 @@
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">数据集管理</h1>
-        <p class="page-description">管理联邦学习数据集，支持上传、预览和分析</p>
-      </div>
-      <div class="header-actions">
-        <a-button type="primary" @click="showUploadModal">
-          <template #icon>
-            <UploadOutlined />
-          </template>
-          上传数据集
-        </a-button>
+        <div class="title-section">
+          <h1 class="page-title">数据集管理</h1>
+          <p class="page-description">管理联邦学习数据集，支持上传、预览和分析</p>
+        </div>
+        <div class="action-section">
+          <a-button type="primary" @click="showUploadModal">
+            <template #icon>
+              <UploadOutlined />
+            </template>
+            上传数据集
+          </a-button>
+        </div>
       </div>
     </div>
 
@@ -888,26 +890,30 @@ onMounted(() => {
 }
 
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   margin-bottom: 24px;
 }
 
-.header-content h1.page-title {
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.title-section h1 {
+  margin: 0;
   font-size: 24px;
   font-weight: 600;
-  margin: 0 0 8px 0;
   color: #262626;
 }
 
 .page-description {
+  margin: 8px 0 0 0;
   color: #8c8c8c;
-  margin: 0;
-}
-
-.header-actions {
-  flex-shrink: 0;
+  font-size: 14px;
 }
 
 .stats-row {
@@ -1005,12 +1011,12 @@ onMounted(() => {
     padding: 16px;
   }
   
-  .page-header {
+  .header-content {
     flex-direction: column;
     gap: 16px;
   }
   
-  .header-actions {
+  .action-section {
     width: 100%;
   }
   

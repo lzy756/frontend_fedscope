@@ -208,7 +208,7 @@ const chartData = ref({
     pointBorderWidth: 2,
     pointRadius: 6,
     pointHoverRadius: 8,
-    fill: true,
+    fill: false,
     tension: 0.4
   }]
 })
@@ -314,7 +314,9 @@ onMounted(async () => {
         try {
           const fixedLine = line.replace(/'/g, '"')
           const json = JSON.parse(fixedLine)
-          parsedData1.push(json)
+          if(json.Role && json.Role.startsWith('Server') && json.Round <= 49) {
+            parsedData1.push(json)
+          }
         } catch (error) {
           console.error('JSON解析错误:', error)
         }
@@ -340,20 +342,45 @@ onMounted(async () => {
         }
       }
     })
+
+    // 读取第三个数据集 (FedAvg)
+    const res3 = await fetch('/eval_results_fedavg.log')
+    const text3 = await res3.text()
+    const lines3 = text3.split('\n')
+    const parsedData3 = []
     
-    data.value = [...parsedData1, ...parsedData2]
+    lines3.forEach((line) => {
+      if (line.trim()) {
+        try {
+          const fixedLine = line.replace(/'/g, '"')
+          const json = JSON.parse(fixedLine)
+          if (json.Role && json.Role.startsWith('Server') && json.Round <= 49) {
+            parsedData3.push(json)
+          }
+        } catch (error) {
+          console.error('JSON解析错误:', error)
+        }
+      }
+    })
+    
+    data.value = [...parsedData1, ...parsedData2, ...parsedData3]
 
     // 准备图表数据
     const datasets = []
     
     // 第一个数据集 (FedSAK)
     if (parsedData1.length > 0) {
-      const data1 = parsedData1.map(item => ({
-        x: item.Round,
-        y: item.Results_weighted_avg?.test_correct/100
-      }))
+      const data1 = parsedData1
+        .filter(item => Number.isFinite(item.Round) || Number.isFinite(item.round))
+        .map(item => ({
+          x: Number.isFinite(item.Round) ? item.Round : item.round,
+          // 使用准确率而不是正确数，保持与y轴[0,1]一致
+          y: typeof item?.Results_weighted_avg?.test_acc === 'number'
+            ? item.Results_weighted_avg.test_acc
+            : (typeof item?.Results_avg?.test_acc === 'number' ? item.Results_avg.test_acc : 0)
+        }))
       datasets.push({
-        label: 'FedSAK',
+        label: 'Ours',
         data: data1,
         borderColor: 'rgb(24, 144, 255)',
         backgroundColor: 'rgba(24, 144, 255, 0.1)',
@@ -363,17 +390,21 @@ onMounted(async () => {
         pointBorderWidth: 1, // 直接在数据集里设置点边框宽度
         pointRadius: 4, // 直接在数据集里设置点大小
         pointHoverRadius: 6,
-        fill: true,
+        fill: false,
         tension: 0.4
       })
     }
     
     // 第二个数据集 (FedProx)
     if (parsedData2.length > 0) {
-      const data2 = parsedData2.map(item => ({
-        x: item.Round,
-        y: item.Results_weighted_avg?.test_correct/100
-      }))
+      const data2 = parsedData2
+        .filter(item => Number.isFinite(item.Round))
+        .map(item => ({
+          x: item.Round,
+          y: typeof item?.Results_weighted_avg?.test_acc === 'number'
+            ? item.Results_weighted_avg.test_acc
+            : (typeof item?.Results_avg?.test_acc === 'number' ? item.Results_avg.test_acc : 0)
+        }))
       datasets.push({
         label: 'FedProx',
         data: data2,
@@ -385,7 +416,33 @@ onMounted(async () => {
         pointBorderWidth: 1,
         pointRadius: 4,
         pointHoverRadius: 6,
-        fill: true,
+        fill: false,
+        tension: 0.4
+      })
+    }
+
+    // 第三个数据集 (FedAvg)
+    if (parsedData3.length > 0) {
+      const data3 = parsedData3
+        .filter(item => Number.isFinite(item.Round))
+        .map(item => ({
+          x: item.Round,
+          y: typeof item?.Results_weighted_avg?.test_acc === 'number'
+            ? item.Results_weighted_avg.test_acc
+            : (typeof item?.Results_avg?.test_acc === 'number' ? item.Results_avg.test_acc : 0)
+        }))
+      datasets.push({
+        label: 'FedAvg',
+        data: data3,
+        borderColor: 'rgb(82, 196, 26)',
+        backgroundColor: 'rgba(82, 196, 26, 0.1)',
+        borderWidth: 2,
+        pointBackgroundColor: 'rgb(82, 196, 26)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: false,
         tension: 0.4
       })
     }
@@ -393,14 +450,26 @@ onMounted(async () => {
     // 合并所有轮次标签
     const allRounds = new Set()
     if (parsedData1.length > 0) {
-      parsedData1.forEach(item => allRounds.add(`第${item.round || item.Round}轮`))
+      parsedData1.forEach(item => {
+        const r = Number.isFinite(item.Round) ? item.Round : (Number.isFinite(item.round) ? item.round : null)
+        if (r !== null) allRounds.add(`第${r}轮`)
+      })
     }
     if (parsedData2.length > 0) {
-      parsedData2.forEach(item => allRounds.add(`第${item.Round}轮`))
+      parsedData2.forEach(item => {
+        if (Number.isFinite(item.Round)) allRounds.add(`第${item.Round}轮`)
+      })
+    }
+    if (parsedData3.length > 0) {
+      parsedData3.forEach(item => {
+        if (Number.isFinite(item.Round)) allRounds.add(`第${item.Round}轮`)
+      })
     }
     const sortedRounds = Array.from(allRounds).sort((a, b) => {
-      const numA = parseInt(a.match(/\d+/)[0])
-      const numB = parseInt(b.match(/\d+/)[0])
+      const ma = a.match(/\d+/)
+      const mb = b.match(/\d+/)
+      const numA = ma ? parseInt(ma[0], 10) : 0
+      const numB = mb ? parseInt(mb[0], 10) : 0
       return numA - numB
     })
 
