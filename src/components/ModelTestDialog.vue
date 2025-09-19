@@ -26,11 +26,23 @@
           </a-form-item>
         </a-form>
         <div v-if="state.status!=='idle'" class="progress-row">
-          <a-progress :percent="progressPercent" :status="progressStatus" />
+          <a-progress 
+            :percent="progressPercent" 
+            :status="progressStatus" 
+            :show-info="true"
+            :format="() => `${actualProcessed}/${actualTotal || '?'}`"
+          />
           <div class="progress-info">
-            <span>进度：{{ state.summary.processed }} / {{ state.summary.total || '-' }}</span>
-            <span>Top-1 准确率：{{ (top1*100).toFixed(2) }}%</span>
-            <span v-if="hasTop5">Top-5 准确率：{{ (top5*100).toFixed(2) }}%</span>
+            <span class="progress-detail">进度：{{ actualProcessed }} / {{ actualTotal || '-' }}</span>
+            <span class="accuracy-info" v-if="actualProcessed > 0">
+              Top-1 准确率：{{ (top1*100).toFixed(2) }}%
+            </span>
+            <span class="accuracy-info" v-if="hasTop5 && actualProcessed > 0">
+              Top-5 准确率：{{ (top5*100).toFixed(2) }}%
+            </span>
+            <span class="status-info" v-if="state.status === 'running'">
+              正在测试中...
+            </span>
           </div>
         </div>
         <a-alert
@@ -140,11 +152,30 @@ const inputType = computed(() => {
 })
 
 const isRunning = computed(() => state.status === 'running')
-const progressPercent = computed(() => {
-  const t = state.summary.total || 0
-  if (!t) return 0
-  return Math.floor((state.summary.processed / t) * 100)
+
+// 统一的进度数据源
+const actualProcessed = computed(() => {
+  // 优先使用 cases 的实际长度，这是最准确的已处理数量
+  return state.cases.length
 })
+
+const actualTotal = computed(() => {
+  // 如果测试还在进行中且 summary.total 已设置，使用它
+  // 如果测试完成，使用实际的 cases 长度作为 total
+  if (state.status === 'success') {
+    return state.cases.length
+  }
+  return state.summary.total || 0
+})
+
+const progressPercent = computed(() => {
+  const total = actualTotal.value
+  if (!total) return 0
+  const processed = actualProcessed.value
+  // 确保进度不超过 100%
+  return Math.min(100, Math.floor((processed / total) * 100))
+})
+
 const progressStatus = computed(() => {
   if (state.status === 'error') return 'exception'
   if (state.status === 'cancelled') return 'normal'
@@ -153,22 +184,22 @@ const progressStatus = computed(() => {
 })
 
 const top1 = computed(() => {
-  const p = state.summary.processed || state.cases.length
-  if (!p) return 0
+  const total = actualProcessed.value
+  if (!total) return 0
   const correct = state.cases.filter(c => c.correct).length
-  return correct / p
+  return correct / total
 })
 
 const top5 = computed(() => {
-  const p = state.summary.processed || state.cases.length
-  if (!p) return 0
+  const total = actualProcessed.value
+  if (!total) return 0
   let count = 0
   for (const c of state.cases) {
     const label = c.label
     const ok = Array.isArray(c.output?.topK) && c.output.topK.some(k => k.label === label)
     if (ok) count++
   }
-  return count / p
+  return count / total
 })
 
 const hasTop5 = computed(() => state.cases.some(c => Array.isArray(c.output?.topK) && c.output.topK.length > 1))
@@ -204,16 +235,30 @@ async function startTest() {
     state.summary.total = total
     closeStream = openTestStream(jobId, {
       onProgress: (evt) => {
-        state.summary.processed = evt.processed
-        if (!state.summary.total && evt.total) state.summary.total = evt.total
+        // 更新后端报告的进度信息
+        if (typeof evt.processed === 'number') {
+          state.summary.processed = evt.processed
+        }
+        if (typeof evt.total === 'number' && !state.summary.total) {
+          state.summary.total = evt.total
+        }
       },
       onCase: (c) => {
+        // 添加新的测试用例
         state.cases.push(c)
+        // 实时更新处理数量，确保与 cases 数组长度保持一致
+        state.summary.processed = state.cases.length
       },
       onSummary: (s) => {
-        // 使用后端给的最终统计（若提供）
-        state.summary.processed = s.processed ?? state.summary.processed
-        state.summary.total = s.total ?? state.summary.total
+        // 测试完成，使用最终统计
+        if (typeof s.processed === 'number') {
+          state.summary.processed = s.processed
+        }
+        if (typeof s.total === 'number') {
+          state.summary.total = s.total
+        }
+        // 确保 processed 与实际 cases 数量一致
+        state.summary.processed = Math.max(state.summary.processed || 0, state.cases.length)
         state.status = 'success'
         closeStream?.()
         closeStream = null
@@ -278,7 +323,19 @@ onBeforeUnmount(() => {
 }
 .panel { margin-bottom: 8px; }
 .progress-row { margin-top: 8px; }
-.progress-info { display: flex; gap: 16px; margin-top: 8px; color: #595959; }
+.progress-info { 
+  display: flex; 
+  gap: 16px; 
+  margin-top: 8px; 
+  color: #595959; 
+  font-size: 14px;
+}
+.progress-detail { font-weight: 500; }
+.accuracy-info { color: #1890ff; }
+.status-info { 
+  color: #52c41a; 
+  font-style: italic; 
+}
 .input-cell { display: flex; align-items: center; gap: 8px; }
 .thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 4px; border: 1px solid #f0f0f0; }
 .input-text { max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
