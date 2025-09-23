@@ -612,8 +612,8 @@ const compareModels = ref([null, null])
 const models = ref([
   {
     id: 1,
-    name: 'ResNet-18-FedAvg',
-    algorithm: 'FedAvg',
+    name: 'ViT-Domainet-Ours',
+    algorithm: 'Ours',
     status: 'deployed',
     accuracy: 94.2,
     size: 45068288, // bytes
@@ -622,7 +622,7 @@ const models = ref([
     rounds: 100,
     createTime: '2024-01-15T10:30:00Z',
     updateTime: '2024-01-16T14:20:00Z',
-    description: '基于ResNet-18架构的联邦平均算法模型，用于图像分类任务',
+    description: '基于我们研究的方法在跨域数据集domainnet上训练的ViT模型，用于图像分类任务',
     performance: {
       trainLoss: 0.1234,
       validLoss: 0.1456,
@@ -657,7 +657,7 @@ const models = ref([
         accuracy: 94.2,
         size: 45068288,
         createTime: '2024-01-16T14:20:00Z',
-        description: '初始版本，基础ResNet-18实现'
+        description: '初始版本，基础ViT实现'
       },
       {
         id: 2,
@@ -1053,7 +1053,8 @@ const getAlgorithmColor = (algorithm) => {
     FedAvg: 'blue',
     FedProx: 'green',
     FedSGD: 'orange',
-    SCAFFOLD: 'purple'
+    SCAFFOLD: 'purple',
+    Ours: 'cyan'
   }
   return colorMap[algorithm] || 'default'
 }
