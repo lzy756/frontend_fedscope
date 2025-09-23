@@ -27,6 +27,7 @@
         </a-form>
         <div v-if="state.status!=='idle'" class="progress-row">
           <a-progress 
+            :key="`progress-${state.summary.processed}-${state.cases.length}`"
             :percent="progressPercent" 
             :status="progressStatus" 
             :show-info="true"
@@ -155,25 +156,26 @@ const isRunning = computed(() => state.status === 'running')
 
 // 统一的进度数据源
 const actualProcessed = computed(() => {
-  // 优先使用 cases 的实际长度，这是最准确的已处理数量
-  return state.cases.length
+  // 直接使用后端报告的数据
+  return state.summary.processed || 0
 })
 
 const actualTotal = computed(() => {
-  // 如果测试还在进行中且 summary.total 已设置，使用它
-  // 如果测试完成，使用实际的 cases 长度作为 total
-  if (state.status === 'success') {
-    return state.cases.length
-  }
+  // 始终使用后端设定的总数，保持分母一致
   return state.summary.total || 0
 })
 
 const progressPercent = computed(() => {
   const total = actualTotal.value
-  if (!total) return 0
   const processed = actualProcessed.value
-  // 确保进度不超过 100%
-  return Math.min(100, Math.floor((processed / total) * 100))
+  
+  // 简单直接的计算
+  if (!total || total <= 0) return 0
+  if (processed <= 0) return 0
+  if (processed >= total) return 100
+  
+  // 直接计算，不做复杂处理
+  return (processed / total) * 100
 })
 
 const progressStatus = computed(() => {
@@ -232,33 +234,36 @@ async function startTest() {
   try {
   const { jobId, total } = await startModelTest(props.modelId, { sampleCount: form.sampleCount, randomSeed: form.randomSeed, inputType: inputType.value })
     state.jobId = jobId
-    state.summary.total = total
+    // 确保初始总数被正确设置
+    if (total && total > 0) {
+      state.summary.total = total
+    } else {
+      // 如果后端没有返回total，使用用户设定的样本数
+      state.summary.total = form.sampleCount
+    }
     closeStream = openTestStream(jobId, {
       onProgress: (evt) => {
         // 更新后端报告的进度信息
         if (typeof evt.processed === 'number') {
           state.summary.processed = evt.processed
         }
-        if (typeof evt.total === 'number' && !state.summary.total) {
-          state.summary.total = evt.total
+        // 更新总数，但只允许增加，不允许减少（防止错误数据）
+        if (typeof evt.total === 'number' && evt.total > 0) {
+          state.summary.total = Math.max(state.summary.total || 0, evt.total)
         }
       },
       onCase: (c) => {
         // 添加新的测试用例
         state.cases.push(c)
-        // 实时更新处理数量，确保与 cases 数组长度保持一致
-        state.summary.processed = state.cases.length
+        // 同步更新processed，确保进度数据准确
+        state.summary.processed = Math.max(state.summary.processed || 0, state.cases.length)
       },
       onSummary: (s) => {
-        // 测试完成，使用最终统计
+        // 只更新最终的处理数量，但不改变总数
         if (typeof s.processed === 'number') {
           state.summary.processed = s.processed
         }
-        if (typeof s.total === 'number') {
-          state.summary.total = s.total
-        }
-        // 确保 processed 与实际 cases 数量一致
-        state.summary.processed = Math.max(state.summary.processed || 0, state.cases.length)
+        // 不更新 total，保持测试开始时设定的值
         state.status = 'success'
         closeStream?.()
         closeStream = null
