@@ -45,12 +45,12 @@ const menuItems = [
     title: '数据集管理',
     path: '/datasets'
   },
-  {
-    key: 'cluster-fedsak',
-    icon: ClusterOutlined, // 使用ClusterOutlined图标
-    title: '训练过程可视化',
-    path: '/cluster-fedsak'
-  },
+  // {
+  //   key: 'cluster-fedsak',
+  //   icon: ClusterOutlined, // 使用ClusterOutlined图标
+  //   title: '训练过程可视化',
+  //   path: '/cluster-fedsak'
+  // },
   {
     key: 'participants',
     icon: TeamOutlined,
