@@ -615,7 +615,7 @@ const models = ref([
     name: 'ViT-Domainet-Ours',
     algorithm: 'Ours',
     status: 'deployed',
-    accuracy: 94.2,
+    accuracy: 50.2,
     size: 45068288, // bytes
     trainingTime: 45,
     participants: 10,
@@ -626,8 +626,8 @@ const models = ref([
     performance: {
       trainLoss: 0.1234,
       validLoss: 0.1456,
-      trainAccuracy: 95.6,
-      validAccuracy: 94.2,
+      trainAccuracy: 60.6,
+      validAccuracy: 50.2,
       parameters: 11689512,
       flops: 1814.0,
       inferenceTime: 5.2,
