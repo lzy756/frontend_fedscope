@@ -18,6 +18,9 @@
           <a-form-item label="随机种子">
             <a-input-number v-model:value="form.randomSeed" :min="0" :max="1e9" :disabled="isRunning" />
           </a-form-item>
+          <a-form-item label="客户端编号">
+            <a-input-number v-model:value="form.clientId" :min="1" :max="30" :disabled="isRunning" />
+          </a-form-item>
           <a-form-item>
             <a-button type="primary" :disabled="isRunning" @click="startTest">开始测试</a-button>
           </a-form-item>
@@ -30,7 +33,7 @@
             :key="`progress-${state.summary.processed}-${state.cases.length}`"
             :percent="progressPercent" 
             :status="progressStatus" 
-            :show-info="true"
+            :show-info="false"
             :format="() => `${actualProcessed}/${actualTotal || '?'}`"
           />
           <div class="progress-info">
@@ -129,7 +132,8 @@ const emit = defineEmits(['close','update:visible'])
 
 const form = reactive({
   sampleCount: 50,
-  randomSeed: 42
+  randomSeed: 12345,
+  clientId: 1
 })
 
 const state = reactive({
@@ -232,7 +236,7 @@ async function startTest() {
   state.summary = { processed: 0, total: 0 }
   state.error = null
   try {
-  const { jobId, total } = await startModelTest(props.modelId, { sampleCount: form.sampleCount, randomSeed: form.randomSeed, inputType: inputType.value })
+  const { jobId, total } = await startModelTest(props.modelId, { sampleCount: form.sampleCount, randomSeed: form.randomSeed, clientId: form.clientId, inputType: inputType.value })
     state.jobId = jobId
     // 确保初始总数被正确设置
     if (total && total > 0) {

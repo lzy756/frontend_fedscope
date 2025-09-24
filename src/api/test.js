@@ -29,6 +29,7 @@ export async function startModelTest(modelId, params){
     modelId,
     sampleCount: params?.sampleCount ?? 50,
     randomSeed: params?.randomSeed,
+    clientId: params?.clientId,
     inputType: params?.inputType === 'image' ? 'image' : 'text'
   }
   const data = await httpJson(buildUrl('/api/model-tests/'), { method: 'POST', body: payload })
