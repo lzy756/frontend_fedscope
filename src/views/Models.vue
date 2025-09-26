@@ -654,8 +654,59 @@ const models = ref([
       }
     ]
   },
-  {
+   {
     id: 2,
+    name: 'LSTM-FedProx',
+    algorithm: 'FedProx',
+    status: 'trained',
+    accuracy: 89.7,
+    size: 12582912,
+    trainingTime: 32,
+    participants: 8,
+    rounds: 80,
+    createTime: '2024-01-14T09:15:00Z',
+    updateTime: '2024-01-14T16:45:00Z',
+    description: 'LSTM模型用于文本分类的FedProx实现',
+    performance: {
+      trainLoss: 0.2345,
+      validLoss: 0.2567,
+      trainAccuracy: 91.2,
+      validAccuracy: 89.7,
+      parameters: 3145728,
+      flops: 456.7,
+      inferenceTime: 8.1,
+      memoryUsage: 12.3
+    },
+    config: {
+      learningRate: 0.001,
+      batchSize: 64,
+      localEpochs: 3,
+      globalRounds: 80,
+      optimizer: 'Adam',
+      lossFunction: 'CrossEntropy',
+      aggregation: 'FedProx',
+      clientSampling: 0.2,
+      dataHeterogeneity: 'Non-IID',
+      security: 'DP',
+      architecture: 'LSTM',
+      inputDim: 'Variable',
+      outputDim: '5',
+      hiddenLayers: 2
+    },
+    versions: [
+      {
+        id: 1,
+        name: 'v1.0.0',
+        current: true,
+        accuracy: 89.7,
+        size: 12582912,
+        createTime: '2024-01-14T16:45:00Z',
+        description: '正式版本，优化了收敛性'
+      }
+    ]
+  },
+  {
+    id: 3,
     name: 'GIN-FedAvg',
     algorithm: 'FedAvg',
     status: 'deployed',
@@ -702,57 +753,6 @@ const models = ref([
         size: 1768144,
         createTime: '2025-09-14T16:45:00Z',
         description: '对比版本'
-      }
-    ]
-  },
-  {
-    id: 3,
-    name: 'MobileNet-FedSGD',
-    algorithm: 'FedSGD',
-    status: 'training',
-    accuracy: 87.3,
-    size: 13845504,
-    trainingTime: 28,
-    participants: 15,
-    rounds: 120,
-    createTime: '2024-01-13T11:20:00Z',
-    updateTime: '2024-01-17T09:30:00Z',
-    description: '轻量级MobileNet模型的联邦SGD实现',
-    performance: {
-      trainLoss: 0.3456,
-      validLoss: 0.3789,
-      trainAccuracy: 88.9,
-      validAccuracy: 87.3,
-      parameters: 3471872,
-      flops: 299.8,
-      inferenceTime: 3.2,
-      memoryUsage: 13.5
-    },
-    config: {
-      learningRate: 0.05,
-      batchSize: 128,
-      localEpochs: 1,
-      globalRounds: 120,
-      optimizer: 'SGD',
-      lossFunction: 'CrossEntropy',
-      aggregation: 'FedSGD',
-      clientSampling: 0.3,
-      dataHeterogeneity: 'IID',
-      security: 'SecAgg',
-      architecture: 'MobileNet-v2',
-      inputDim: '224x224x3',
-      outputDim: '100',
-      hiddenLayers: 19
-    },
-    versions: [
-      {
-        id: 1,
-        name: 'v0.8.0',
-        current: true,
-        accuracy: 87.3,
-        size: 13845504,
-        createTime: '2024-01-17T09:30:00Z',
-        description: '当前训练版本'
       }
     ]
   },
