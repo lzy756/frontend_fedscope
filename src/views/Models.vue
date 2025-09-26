@@ -211,7 +211,7 @@
 
     <!-- 模型详情模态框 -->
     <a-modal
-      v-model:visible="detailModalVisible"
+      v-model:open="detailModalVisible"
       :title="`模型详情 - ${selectedModel.name}`"
       width="1000px"
       :footer="null"
@@ -430,7 +430,7 @@
 
     <!-- 模型对比模态框 -->
     <a-modal
-      v-model:visible="compareModalVisible"
+      v-model:open="compareModalVisible"
       title="模型对比"
       width="1200px"
       :footer="null"
@@ -496,7 +496,7 @@
 
     <!-- 上传模型模态框 -->
     <a-modal
-      v-model:visible="uploadModalVisible"
+      v-model:open="uploadModalVisible"
       title="上传模型"
       width="600px"
       @ok="handleUploadOk"
@@ -670,7 +670,7 @@ const models = ref([
       }
     ]
   },
-  {
+   {
     id: 2,
     name: 'LSTM-FedProx',
     algorithm: 'FedProx',
@@ -723,52 +723,52 @@ const models = ref([
   },
   {
     id: 3,
-    name: 'MobileNet-FedSGD',
-    algorithm: 'FedSGD',
-    status: 'training',
-    accuracy: 87.3,
-    size: 13845504,
-    trainingTime: 28,
-    participants: 15,
-    rounds: 120,
-    createTime: '2024-01-13T11:20:00Z',
-    updateTime: '2024-01-17T09:30:00Z',
-    description: '轻量级MobileNet模型的联邦SGD实现',
+    name: 'GIN-FedAvg',
+    algorithm: 'FedAvg',
+    status: 'deployed',
+    accuracy: 45.7,
+    size: 1768144,
+    trainingTime: 10,
+    participants: 21,
+    rounds: 70,
+    createTime: '2025-09-14T09:15:00Z',
+    updateTime: '2025-09-14T16:45:00Z',
+    description: 'GIN模型用于分子图分类的FedAvg实现',
     performance: {
-      trainLoss: 0.3456,
-      validLoss: 0.3789,
-      trainAccuracy: 88.9,
-      validAccuracy: 87.3,
-      parameters: 3471872,
-      flops: 299.8,
-      inferenceTime: 3.2,
-      memoryUsage: 13.5
+      trainLoss: 0.6690,
+      validLoss: 0.6934,
+      trainAccuracy: 45.1,
+      validAccuracy: 43.4,
+      parameters: 34370,
+      flops: 3500,
+      inferenceTime: 5,
+      memoryUsage: 35.5
     },
     config: {
       learningRate: 0.05,
-      batchSize: 128,
-      localEpochs: 1,
-      globalRounds: 120,
+      batchSize: 8,
+      localEpochs: 8,
+      globalRounds: 70,
       optimizer: 'SGD',
       lossFunction: 'CrossEntropy',
-      aggregation: 'FedSGD',
-      clientSampling: 0.3,
-      dataHeterogeneity: 'IID',
-      security: 'SecAgg',
-      architecture: 'MobileNet-v2',
-      inputDim: '224x224x3',
-      outputDim: '100',
-      hiddenLayers: 19
+      aggregation: 'FedAvg',
+      clientSampling: 1,
+      dataHeterogeneity: 'Non-IID',
+      security: 'DP',
+      architecture: 'GIN',
+      inputDim: 'Variable',
+      outputDim: '37',
+      hiddenLayers: 64
     },
     versions: [
       {
         id: 1,
-        name: 'v0.8.0',
+        name: 'v1.0.0',
         current: true,
-        accuracy: 87.3,
-        size: 13845504,
-        createTime: '2024-01-17T09:30:00Z',
-        description: '当前训练版本'
+        accuracy: 45.7,
+        size: 1768144,
+        createTime: '2025-09-14T16:45:00Z',
+        description: '对比版本'
       }
     ]
   },
